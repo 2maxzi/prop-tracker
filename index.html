@@ -66,8 +66,6 @@ body{
 }
 .phase-badge.eval{color:var(--amber); background:rgba(232,183,104,0.08); border-color:rgba(232,183,104,0.3);}
 .phase-badge.funded{color:var(--green); background:rgba(61,220,151,0.08); border-color:rgba(61,220,151,0.3);}
-.phase-badge.won{color:var(--green); background:rgba(61,220,151,0.08); border-color:rgba(61,220,151,0.3);}
-.phase-badge.lost{color:var(--red); background:rgba(243,106,106,0.08); border-color:rgba(243,106,106,0.3);}
 .attempt-tag{font-size:12px; color:var(--muted);}
 
 .wrap{max-width:1180px; margin:0 auto; padding:0 32px;}
@@ -184,7 +182,6 @@ tr.trow:hover{background:rgba(167,139,250,0.05);}
 }
 .tag.long{color:var(--green);}
 .tag.short{color:var(--red);}
-.tag.be{color:var(--amber);}
 .row-actions{display:flex; gap:6px;}
 .icon-btn{
   background:transparent; border:1px solid var(--line); color:var(--muted);
@@ -199,25 +196,15 @@ tr.trow:hover{background:rgba(167,139,250,0.05);}
 .hist-item{
   display:flex; align-items:center; justify-content:space-between;
   background:var(--surface); border:1px solid var(--line); border-radius:12px;
-  padding:14px 18px; cursor:pointer; transition:all .15s ease;
+  padding:14px 18px;
 }
-.hist-item:hover{border-color:var(--accent); transform:translateY(-1px);}
-.hist-item.viewing{border-color:var(--accent-bright); box-shadow:0 0 0 1px rgba(167,139,250,0.25);}
 .hist-left{display:flex; align-items:center; gap:12px;}
 .hist-dot{width:9px; height:9px; border-radius:50%;}
 .hist-dot.won{background:var(--green); box-shadow:0 0 8px var(--green);}
 .hist-dot.lost{background:var(--red); box-shadow:0 0 8px var(--red);}
-.hist-dot.active{background:var(--accent); box-shadow:0 0 8px var(--accent);}
 .hist-title{font-weight:600; font-size:13.5px;}
 .hist-sub{font-size:11.5px; color:var(--muted);}
 .hist-pnl{font-family:'JetBrains Mono'; font-weight:700; font-size:13.5px;}
-
-.viewing-banner{
-  display:none; align-items:center; justify-content:space-between; gap:14px;
-  background:var(--surface); border:1px solid var(--accent); border-radius:12px;
-  padding:12px 16px; margin:18px 0 -6px;
-}
-.viewing-banner span{font-size:13px; color:var(--muted);}
 
 .wl-strip{display:flex; gap:14px; margin-top:14px;}
 .wl-pill{
@@ -365,11 +352,6 @@ tr.trow:hover{background:rgba(167,139,250,0.05);}
 
 <div class="wrap">
 
-  <div class="viewing-banner" id="viewingBanner">
-    <span id="viewingBannerText"></span>
-    <button class="btn small primary" onclick="backToActive()">Wróć do aktywnego podejścia</button>
-  </div>
-
   <div class="hero">
     <div class="hero-top">
       <div>
@@ -463,7 +445,7 @@ tr.trow:hover{background:rgba(167,139,250,0.05);}
 
   <div class="section">
     <div class="section-head">
-      <div class="section-title">Podejścia (kliknij, aby przeglądać/edytować)</div>
+      <div class="section-title">Historia kont</div>
       <button class="btn danger-outline small" onclick="confirmResetAll()">Wyczyść wszystko</button>
     </div>
     <div class="history-list" id="historyList"></div>
@@ -497,7 +479,6 @@ tr.trow:hover{background:rgba(167,139,250,0.05);}
       <div class="toggle-group" id="directionToggle">
         <button type="button" class="toggle-btn active" data-value="long" onclick="selectDirection('long')">Long</button>
         <button type="button" class="toggle-btn" data-value="short" onclick="selectDirection('short')">Short</button>
-        <button type="button" class="toggle-btn" data-value="be" onclick="selectDirection('be')">BE</button>
       </div>
     </div>
     <div class="field">
@@ -541,80 +522,28 @@ const db = firebase.firestore();
 
 /* ===================== CONFIG (reguły challenge) ===================== */
 const RULES = {
-  evaluation: { target: 1500, trailingDD: 1000, minDays: 3, consistency: 0.4 }
+  evaluation: { target: 1500, trailingDD: 1000, minDays: 3, consistency: 0.4 },
+  funded:     { trailingDD: 1000, dailyLossLimit: 500, consistency: 0.4 }
 };
 
 /* ===================== STATE ===================== */
 let state = null;
 let currentUser = null;
 let saveTimer = null;
-let viewAttemptId = null; // które podejście jest właśnie oglądane/edytowane (lokalne, nie synchronizowane)
 
-function makeAttempt(){
-  return { id: uid(), trades: [], result: null, startDate: todayISO(), endDate: null };
-}
 function defaultState(){
-  const first = makeAttempt();
   return {
-    attempts: [first],
-    allTrades: [],
-    calYear: new Date().getFullYear(),
-    calMonth: new Date().getMonth()
+    phase:'evaluation',
+    attemptNumber:1,
+    fundedRound:1,
+    wonCount:0,
+    lostCount:0,
+    trades:[],
+    allTrades:[],
+    history:[],
+    calYear:new Date().getFullYear(),
+    calMonth:new Date().getMonth()
   };
-}
-
-// Zamienia stary format danych (phase/trades/history) na nowy format z listą "attempts"
-function normalizeState(raw){
-  if(!raw) return defaultState();
-  if(Array.isArray(raw.attempts) && raw.attempts.length){
-    raw.attempts.forEach(a=>{ if(!a.trades) a.trades = []; });
-    if(!raw.allTrades) raw.allTrades = [];
-    if(raw.calYear == null) raw.calYear = new Date().getFullYear();
-    if(raw.calMonth == null) raw.calMonth = new Date().getMonth();
-    return raw;
-  }
-  // migracja starych danych (przed wprowadzeniem wielu podejść)
-  const attempts = [];
-  if(Array.isArray(raw.history)){
-    raw.history.forEach(h=>{
-      attempts.push({
-        id: uid(), trades: [], result: h.result, startDate: null, endDate: h.endDate,
-        legacy: true, legacyTotalPnl: h.totalPnl, legacyTradingDays: h.tradingDays, legacyTradesCount: h.tradesCount
-      });
-    });
-  }
-  attempts.push({ id: uid(), trades: raw.trades || [], result: null, startDate: todayISO(), endDate: null });
-  return {
-    attempts,
-    allTrades: raw.allTrades || [],
-    calYear: raw.calYear || new Date().getFullYear(),
-    calMonth: raw.calMonth != null ? raw.calMonth : new Date().getMonth()
-  };
-}
-
-function getActiveAttempt(){
-  for(let i=state.attempts.length-1; i>=0; i--){
-    if(state.attempts[i].result === null) return state.attempts[i];
-  }
-  const a = makeAttempt();
-  state.attempts.push(a);
-  return a;
-}
-function getViewAttempt(){
-  let a = state.attempts.find(x=>x.id === viewAttemptId);
-  if(!a){ a = getActiveAttempt(); viewAttemptId = a.id; }
-  return a;
-}
-function isViewingActive(){
-  return getViewAttempt().id === getActiveAttempt().id;
-}
-function viewAttempt(id){
-  viewAttemptId = id;
-  renderAll();
-}
-function backToActive(){
-  viewAttemptId = getActiveAttempt().id;
-  renderAll();
 }
 
 function setSyncStatus(text, kind){
@@ -642,31 +571,39 @@ function saveState(){
   }, 600);
 }
 
+let firestoreUnsub = null;
+
 async function loadStateForUser(uid){
   // najpierw lokalny cache, żeby appka odpaliła się natychmiast
   const cached = localStorage.getItem(localCacheKey(uid));
-  state = normalizeState(cached ? JSON.parse(cached) : null);
-  viewAttemptId = getActiveAttempt().id;
+  state = cached ? Object.assign(defaultState(), JSON.parse(cached)) : defaultState();
   renderAll();
 
-  // potem świeże dane z Firestore (źródło prawdy, synchronizacja między urządzeniami)
+  if(firestoreUnsub){ firestoreUnsub(); firestoreUnsub = null; }
+
   setSyncStatus('Synchronizowanie…', 'muted');
   try{
     const doc = await db.collection('users').doc(uid).get();
-    if(doc.exists){
-      state = normalizeState(doc.data());
-    } else {
+    if(!doc.exists){
       state = defaultState();
       await db.collection('users').doc(uid).set(state);
     }
-    viewAttemptId = getActiveAttempt().id;
+  }catch(err){
+    console.error('Błąd pierwszego pobrania z Firestore:', err);
+  }
+
+  // Nasłuch na żywo: jeśli Cloudflare Worker dopisze nowe trejdy z Capital.com
+  // w tle, appka je pokaże automatycznie bez odświeżania strony.
+  firestoreUnsub = db.collection('users').doc(uid).onSnapshot(doc=>{
+    if(!doc.exists) return;
+    state = Object.assign(defaultState(), doc.data());
     localStorage.setItem(localCacheKey(uid), JSON.stringify(state));
     renderAll();
     setSyncStatus('Zsynchronizowano ✓', 'ok');
-  }catch(err){
-    console.error('Błąd pobierania z Firestore:', err);
+  }, err=>{
+    console.error('Błąd nasłuchu Firestore:', err);
     setSyncStatus('Błąd synchronizacji: ' + err.code, 'error');
-  }
+  });
 }
 
 /* ===================== AUTH UI ===================== */
@@ -719,6 +656,7 @@ function submitAuth(){
 }
 
 function logout(){
+  if(firestoreUnsub){ firestoreUnsub(); firestoreUnsub = null; }
   auth.signOut();
 }
 
@@ -755,8 +693,8 @@ function todayISO(){ return new Date().toISOString().slice(0,10); }
 function uid(){ return 't_' + Date.now() + '_' + Math.floor(Math.random()*10000); }
 
 /* ===================== METRICS ===================== */
-function computeMetrics(attempt){
-  const trades = (attempt.trades||[]).slice().sort((a,b)=>a.date.localeCompare(b.date));
+function computeMetrics(){
+  const trades = state.trades.slice().sort((a,b)=>a.date.localeCompare(b.date));
   const dailyMap = {};
   trades.forEach(t=>{ dailyMap[t.date] = (dailyMap[t.date]||0) + Number(t.pnl); });
   const dates = Object.keys(dailyMap).sort();
@@ -817,24 +755,25 @@ function renderHero(m){
 }
 
 /* ===================== RENDER: STATS ===================== */
-function renderStats(m, attempt){
-  const rules = RULES.evaluation;
-  const badge = document.getElementById('phaseBadge');
-  if(attempt.result === 'won'){
-    badge.textContent = 'Zaliczone ✓'; badge.className = 'phase-badge won';
-  } else if(attempt.result === 'lost'){
-    badge.textContent = 'Przegrane'; badge.className = 'phase-badge lost';
-  } else {
-    badge.textContent = 'Evaluation'; badge.className = 'phase-badge eval';
-  }
-  const idx = state.attempts.findIndex(a=>a.id===attempt.id);
-  document.getElementById('attemptTag').textContent = `Podejście #${idx+1}`;
+function renderStats(m){
+  const rules = RULES[state.phase];
+  document.getElementById('phaseBadge').textContent = state.phase === 'evaluation' ? 'Evaluation' : 'Funded';
+  document.getElementById('phaseBadge').className = 'phase-badge ' + (state.phase === 'evaluation' ? 'eval' : 'funded');
+  document.getElementById('attemptTag').textContent = state.phase === 'evaluation'
+    ? `Podejście #${state.attemptNumber}`
+    : `Runda funded #${state.fundedRound}`;
 
-  // Target
-  const pct = Math.max(0, Math.min(100, (m.totalPnl / rules.target) * 100));
-  document.getElementById('statTarget').textContent = `${fmtMoney(m.totalPnl)} / ${fmtMoney(rules.target)}`;
-  document.getElementById('barTarget').style.width = pct + '%';
-  document.getElementById('subTarget').textContent = pct >= 100 ? 'Cel osiągnięty ✓' : Math.round(pct) + '% celu';
+  // Target (only meaningful in evaluation; in funded show total pnl trend instead)
+  if(state.phase === 'evaluation'){
+    const pct = Math.max(0, Math.min(100, (m.totalPnl / rules.target) * 100));
+    document.getElementById('statTarget').textContent = `${fmtMoney(m.totalPnl)} / ${fmtMoney(rules.target)}`;
+    document.getElementById('barTarget').style.width = pct + '%';
+    document.getElementById('subTarget').textContent = pct >= 100 ? 'Cel osiągnięty ✓' : Math.round(pct) + '% celu';
+  } else {
+    document.getElementById('statTarget').textContent = fmtMoney(m.totalPnl) + ' (funded)';
+    document.getElementById('barTarget').style.width = '100%';
+    document.getElementById('subTarget').textContent = 'Brak celu — konto funded';
+  }
 
   // Drawdown
   const ddPct = Math.max(0, Math.min(100, (m.currentDD / rules.trailingDD) * 100));
@@ -845,11 +784,17 @@ function renderStats(m, attempt){
   else if(ddPct >= 70){ subDD.textContent = 'Blisko limitu — uważaj'; subDD.className = 'stat-sub warn'; }
   else { subDD.textContent = 'Bufor bezpieczny'; subDD.className = 'stat-sub ok'; }
 
-  // Days
-  const dPct = Math.min(100, (m.tradingDays / rules.minDays) * 100);
-  document.getElementById('statDays').textContent = `${m.tradingDays} / ${rules.minDays}`;
-  document.getElementById('barDays').style.width = dPct + '%';
-  document.getElementById('subDays').textContent = m.tradingDays >= rules.minDays ? 'Minimum spełnione ✓' : 'Minimum do zaliczenia';
+  // Days (only relevant for evaluation)
+  if(state.phase === 'evaluation'){
+    const dPct = Math.min(100, (m.tradingDays / rules.minDays) * 100);
+    document.getElementById('statDays').textContent = `${m.tradingDays} / ${rules.minDays}`;
+    document.getElementById('barDays').style.width = dPct + '%';
+    document.getElementById('subDays').textContent = m.tradingDays >= rules.minDays ? 'Minimum spełnione ✓' : 'Minimum do zaliczenia';
+  } else {
+    document.getElementById('statDays').textContent = `${m.tradingDays} dni`;
+    document.getElementById('barDays').style.width = '100%';
+    document.getElementById('subDays').textContent = 'Bez wymogu minimum';
+  }
 
   // Consistency
   const consPct = Math.min(100, m.consistencyRatio * 100);
@@ -866,11 +811,9 @@ function renderStats(m, attempt){
     subCons.textContent = 'W normie'; subCons.className = 'stat-sub ok';
   }
 
-  // Win/Loss strip — liczone z listy podejść (attempts), nie z osobnych liczników
-  const wonCount = state.attempts.filter(a=>a.result==='won').length;
-  const lostCount = state.attempts.filter(a=>a.result==='lost').length;
-  document.getElementById('wlWon').textContent = wonCount;
-  document.getElementById('wlLost').textContent = lostCount;
+  // Win/Loss strip
+  document.getElementById('wlWon').textContent = state.wonCount;
+  document.getElementById('wlLost').textContent = state.lostCount;
   const allTrades = state.allTrades || [];
   const winningTrades = allTrades.filter(t => Number(t.pnl) > 0).length;
   document.getElementById('wlRate').textContent = allTrades.length === 0 ? '—' : Math.round((winningTrades/allTrades.length)*100) + '%';
@@ -925,7 +868,7 @@ function renderCalendar(m){
 function renderTradeTable(m){
   const tbody = document.getElementById('tradeTbody');
   const emptyEl = document.getElementById('tradeEmpty');
-  const sorted = m.trades.slice().sort((a,b)=> b.date.localeCompare(a.date) || b.id.localeCompare(a.id));
+  const sorted = state.trades.slice().sort((a,b)=> b.date.localeCompare(a.date) || b.id.localeCompare(a.id));
   if(sorted.length === 0){
     tbody.innerHTML = '';
     emptyEl.style.display = 'block';
@@ -936,7 +879,7 @@ function renderTradeTable(m){
     <tr class="trow">
       <td class="mono">${t.date}</td>
       <td>${t.instrument}</td>
-      <td><span class="tag ${t.direction}">${t.direction === 'long' ? 'LONG' : t.direction === 'short' ? 'SHORT' : 'BE'}</span></td>
+      <td><span class="tag ${t.direction}">${t.direction === 'long' ? 'LONG' : 'SHORT'}</span></td>
       <td class="pnl-cell ${t.pnl>=0?'pos':'neg'}">${fmtMoneyPrecise(t.pnl)}</td>
       <td style="color:var(--muted); max-width:160px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${t.notes || ''}</td>
       <td>
@@ -952,62 +895,33 @@ function renderTradeTable(m){
 /* ===================== RENDER: HISTORY ===================== */
 function renderHistory(){
   const list = document.getElementById('historyList');
-  if(!state.attempts.length){
-    list.innerHTML = '<div class="empty-state">Brak podejść.</div>';
+  if(state.history.length === 0){
+    list.innerHTML = '<div class="empty-state">Brak zakończonych kont — historia pojawi się po zaliczeniu lub przegraniu ewaluacji.</div>';
     return;
   }
-  const viewId = getViewAttempt().id;
-  const activeId = getActiveAttempt().id;
-  const sorted = state.attempts.slice().reverse();
-  list.innerHTML = sorted.map(a=>{
-    const idx = state.attempts.findIndex(x=>x.id===a.id);
-    const totalPnl = a.legacy ? (a.legacyTotalPnl||0) : (a.trades||[]).reduce((s,t)=>s+Number(t.pnl),0);
-    const tradesCount = a.legacy ? (a.legacyTradesCount||0) : (a.trades||[]).length;
-    const statusLabel = a.result === 'won' ? 'Zaliczone' : a.result === 'lost' ? 'Przegrane' : 'W trakcie';
-    const dotClass = a.result === 'won' ? 'won' : a.result === 'lost' ? 'lost' : 'active';
-    const activeTag = a.id === activeId ? ' · aktywne' : '';
-    const legacyTag = a.legacy ? ' · dane archiwalne (bez edycji)' : '';
-    return `
-    <div class="hist-item ${a.id===viewId ? 'viewing':''}" onclick="viewAttempt('${a.id}')">
+  list.innerHTML = state.history.slice().reverse().map(h => `
+    <div class="hist-item">
       <div class="hist-left">
-        <div class="hist-dot ${dotClass}"></div>
+        <div class="hist-dot ${h.result}"></div>
         <div>
-          <div class="hist-title">Podejście #${idx+1} — ${statusLabel}${activeTag}</div>
-          <div class="hist-sub">${a.endDate || 'w trakcie'} · ${tradesCount} transakcji${legacyTag}</div>
+          <div class="hist-title">${h.phase === 'evaluation' ? 'Evaluation' : 'Funded'} — ${h.result === 'won' ? 'Zaliczone' : 'Przegrane'}</div>
+          <div class="hist-sub">${h.endDate} · ${h.tradingDays} dni · ${h.tradesCount} transakcji</div>
         </div>
       </div>
-      <div class="hist-pnl" style="color:${totalPnl>=0?'var(--green)':'var(--red)'}">${fmtMoneyPrecise(totalPnl)}</div>
-    </div>`;
-  }).join('');
-}
-
-/* ===================== VIEWING BANNER ===================== */
-function renderViewingBanner(){
-  const banner = document.getElementById('viewingBanner');
-  const attempt = getViewAttempt();
-  const active = getActiveAttempt();
-  const idx = state.attempts.findIndex(a=>a.id===attempt.id);
-  if(attempt.id === active.id){
-    banner.style.display = 'none';
-    return;
-  }
-  banner.style.display = 'flex';
-  const label = attempt.result === 'won' ? 'zaliczone' : attempt.result === 'lost' ? 'przegrane' : 'archiwalne';
-  document.getElementById('viewingBannerText').textContent =
-    `Przeglądasz i edytujesz Podejście #${idx+1} (${label}) — zmiany tu nie wpływają na aktywne podejście.`;
+      <div class="hist-pnl ${h.totalPnl>=0?'pos':'neg'}" style="color:${h.totalPnl>=0?'var(--green)':'var(--red)'}">${fmtMoneyPrecise(h.totalPnl)}</div>
+    </div>
+  `).join('');
 }
 
 /* ===================== MAIN RENDER ===================== */
 function renderAll(){
-  const attempt = getViewAttempt();
-  const m = computeMetrics(attempt);
+  const m = computeMetrics();
   renderHero(m);
-  renderStats(m, attempt);
+  renderStats(m);
   renderCalendar(m);
   renderTradeTable(m);
   renderHistory();
-  renderViewingBanner();
-  if(isViewingActive()) checkPhaseTransition(m);
+  checkPhaseTransition(m);
 }
 
 /* ===================== TRADE MODAL ===================== */
@@ -1048,16 +962,15 @@ function saveTrade(){
   if(pnlRaw === ''){ alert('Podaj wynik P&L.'); return; }
   const pnl = Number(pnlRaw);
   if(!state.allTrades) state.allTrades = [];
-  const attempt = getViewAttempt();
 
   if(id){
-    const t = attempt.trades.find(x=>x.id===id);
+    const t = state.trades.find(x=>x.id===id);
     if(t){ Object.assign(t, {date, instrument, direction, pnl, notes}); }
     const tAll = state.allTrades.find(x=>x.id===id);
     if(tAll){ Object.assign(tAll, {date, instrument, direction, pnl, notes}); }
   } else {
     const newTrade = { id: uid(), date, instrument, direction, pnl, notes };
-    attempt.trades.push(newTrade);
+    state.trades.push(newTrade);
     state.allTrades.push(newTrade);
   }
   saveState();
@@ -1065,8 +978,7 @@ function saveTrade(){
   renderAll();
 }
 function editTrade(id){
-  const attempt = getViewAttempt();
-  const t = attempt.trades.find(x=>x.id===id);
+  const t = state.trades.find(x=>x.id===id);
   if(!t) return;
   document.getElementById('tradeModalTitle').textContent = 'Edytuj trade';
   document.getElementById('tradeId').value = t.id;
@@ -1079,8 +991,7 @@ function editTrade(id){
 }
 function deleteTrade(id){
   if(!confirm('Usunąć tę transakcję?')) return;
-  const attempt = getViewAttempt();
-  attempt.trades = attempt.trades.filter(x=>x.id!==id);
+  state.trades = state.trades.filter(x=>x.id!==id);
   if(state.allTrades) state.allTrades = state.allTrades.filter(x=>x.id!==id);
   saveState();
   renderAll();
@@ -1088,34 +999,51 @@ function deleteTrade(id){
 
 /* ===================== PHASE TRANSITIONS ===================== */
 function checkPhaseTransition(m){
-  const rules = RULES.evaluation;
+  const rules = RULES[state.phase];
   const ddBreached = m.currentDD >= rules.trailingDD && m.trades.length > 0;
 
   if(ddBreached){
-    archiveActiveAttempt('lost');
+    archiveAttempt(m, 'lost');
     showResultModal('lose', m);
     return;
   }
 
-  const targetHit = m.totalPnl >= rules.target;
-  const daysOk = m.tradingDays >= rules.minDays;
-  const consOk = m.totalPnl <= 0 || m.consistencyRatio <= rules.consistency;
-  if(targetHit && daysOk && consOk){
-    archiveActiveAttempt('won');
-    showResultModal('win', m);
-    return;
+  if(state.phase === 'evaluation'){
+    const rulesE = RULES.evaluation;
+    const targetHit = m.totalPnl >= rulesE.target;
+    const daysOk = m.tradingDays >= rulesE.minDays;
+    const consOk = m.totalPnl <= 0 || m.consistencyRatio <= rulesE.consistency;
+    if(targetHit && daysOk && consOk){
+      archiveAttempt(m, 'won');
+      showResultModal('win', m);
+      return;
+    }
   }
 }
 
-// Zamyka aktywne podejście (wynik: won/lost) i od razu otwiera nowe, puste podejście Evaluation.
-// Zakończone podejście NIE znika — zostaje w historii i można je dalej przeglądać i edytować.
-function archiveActiveAttempt(result){
-  const active = getActiveAttempt();
-  active.result = result;
-  active.endDate = todayISO();
-  const fresh = makeAttempt();
-  state.attempts.push(fresh);
-  viewAttemptId = fresh.id;
+function archiveAttempt(m, result){
+  state.history.push({
+    phase: state.phase,
+    result,
+    endDate: todayISO(),
+    totalPnl: m.totalPnl,
+    tradingDays: m.tradingDays,
+    tradesCount: m.trades.length
+  });
+  if(result === 'won') state.wonCount++;
+  if(result === 'lost') state.lostCount++;
+
+  if(result === 'won' && state.phase === 'evaluation'){
+    state.phase = 'funded';
+    state.fundedRound = 1;
+  } else if(result === 'lost'){
+    state.phase = 'evaluation';
+    state.attemptNumber++;
+  } else if(result === 'lost' && state.phase === 'funded'){
+    state.phase = 'evaluation';
+    state.attemptNumber++;
+  }
+  state.trades = [];
   saveState();
 }
 
@@ -1126,17 +1054,15 @@ function showResultModal(type, m){
       <div class="result-icon win">✓</div>
       <h2>Ewaluacja zaliczona!</h2>
       <p>Zysk ${fmtMoneyPrecise(m.totalPnl)} przy ${m.tradingDays} dniach tradingowych i konsystencji w normie.
-      To podejście zostaje zapisane jako <strong>zaliczone</strong> — możesz je dalej przeglądać i edytować w historii poniżej.
-      Startuje nowe, czyste podejście <strong>Evaluation</strong>.</p>
+      Konto przechodzi w fazę <strong>Funded</strong>. Statystyki tego podejścia zostały zresetowane i zapisane w historii.</p>
       <div class="modal-actions"><button class="btn primary" onclick="closeResultModal()">Świetnie, dalej!</button></div>
     `;
   } else {
     body.innerHTML = `
       <div class="result-icon lose">✕</div>
-      <h2>Podejście przegrane</h2>
-      <p>Przekroczono maksymalny trailing drawdown ($1 000 od szczytu salda). To podejście zostaje zapisane jako
-      <strong>przegrane</strong> — możesz je dalej przeglądać i edytować w historii poniżej.
-      Startuje nowe, czyste podejście <strong>Evaluation</strong>.</p>
+      <h2>Konto zakończone</h2>
+      <p>Przekroczono maksymalny trailing drawdown ($1 000 od szczytu salda). Konto zostało zaliczone jako przegrane
+      i zarchiwizowane. Zaczynasz nowe podejście Evaluation od zera.</p>
       <div class="modal-actions"><button class="btn primary" onclick="closeResultModal()">Rozumiem, restart</button></div>
     `;
   }
@@ -1149,9 +1075,8 @@ function closeResultModal(){
 
 /* ===================== RESET ALL ===================== */
 function confirmResetAll(){
-  if(!confirm('To usunie WSZYSTKIE dane (wszystkie podejścia, transakcje, statystyki won/lost). Kontynuować?')) return;
+  if(!confirm('To usunie WSZYSTKIE dane (transakcje, historię, statystyki won/lost). Kontynuować?')) return;
   state = defaultState();
-  viewAttemptId = state.attempts[0].id;
   saveState();
   renderAll();
 }
