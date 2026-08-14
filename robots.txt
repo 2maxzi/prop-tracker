@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://proptrackermaxzi-theta.vercel.app/sitemap.xml
