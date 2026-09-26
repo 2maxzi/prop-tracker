@@ -4,7 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>PROP TRACKER — Tradeify Select 25K</title>
-<meta name="description" content="Prop Tracker — osobista aplikacja do śledzenia wyników tradingu na koncie Tradeify Select 25K. Dziennik transakcji, kalendarz P&L, statystyki drawdown i konsystencji.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
@@ -41,7 +40,7 @@ body{
 }
 .mono{font-family:'JetBrains Mono', monospace;}
 .disp{font-family:'Space Grotesk', sans-serif;}
-
+ 
 /* ---------- topbar ---------- */
 .topbar{
   display:flex; align-items:center; justify-content:space-between;
@@ -67,10 +66,12 @@ body{
 }
 .phase-badge.eval{color:var(--amber); background:rgba(232,183,104,0.08); border-color:rgba(232,183,104,0.3);}
 .phase-badge.funded{color:var(--green); background:rgba(61,220,151,0.08); border-color:rgba(61,220,151,0.3);}
+.phase-badge.won{color:var(--green); background:rgba(61,220,151,0.08); border-color:rgba(61,220,151,0.3);}
+.phase-badge.lost{color:var(--red); background:rgba(243,106,106,0.08); border-color:rgba(243,106,106,0.3);}
 .attempt-tag{font-size:12px; color:var(--muted);}
-
+ 
 .wrap{max-width:1180px; margin:0 auto; padding:0 32px;}
-
+ 
 /* ---------- hero ---------- */
 .hero{padding:44px 0 24px;}
 .hero-top{display:flex; justify-content:space-between; align-items:flex-end; flex-wrap:wrap; gap:18px; margin-bottom:18px;}
@@ -82,7 +83,7 @@ body{
 .pnl-big .val.pos{color:var(--green);}
 .pnl-big .val.neg{color:var(--red);}
 .pnl-big .val.zero{color:var(--text);}
-
+ 
 .chart-card{
   background:linear-gradient(180deg, var(--surface), var(--surface-2));
   border:1px solid var(--line); border-radius:16px; padding:18px 22px 10px;
@@ -98,7 +99,7 @@ body{
 @keyframes draw{ to{stroke-dashoffset:0;} }
 .eq-fill{opacity:0; animation:fadein 1s ease 0.6s forwards;}
 @keyframes fadein{ to{opacity:1;} }
-
+ 
 /* ---------- stat grid ---------- */
 .stat-grid{
   display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin:22px 0 8px;
@@ -117,10 +118,10 @@ body{
 .stat-sub.warn{color:var(--amber);}
 .stat-sub.bad{color:var(--red);}
 .stat-sub.ok{color:var(--green);}
-
+ 
 @media(max-width:900px){ .stat-grid{grid-template-columns:repeat(2,1fr);} }
 @media(max-width:560px){ .stat-grid{grid-template-columns:1fr;} }
-
+ 
 /* ---------- section header ---------- */
 .section{margin-top:38px;}
 .section-head{display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;}
@@ -136,7 +137,7 @@ body{
 .btn.ghost{background:transparent;}
 .btn.small{padding:6px 11px; font-size:12px;}
 .btn.danger-outline{border-color:rgba(243,106,106,0.4); color:var(--red);}
-
+ 
 /* ---------- calendar ---------- */
 .cal-card{background:var(--surface); border:1px solid var(--line); border-radius:16px; padding:20px;}
 .cal-nav{display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;}
@@ -163,7 +164,7 @@ body{
   .cal-day .dpnl{font-size:9.5px;}
   .cal-day{padding:5px; border-radius:8px;}
 }
-
+ 
 /* ---------- trade table ---------- */
 .table-card{background:var(--surface); border:1px solid var(--line); border-radius:16px; overflow:hidden;}
 table{width:100%; border-collapse:collapse;}
@@ -183,6 +184,7 @@ tr.trow:hover{background:rgba(167,139,250,0.05);}
 }
 .tag.long{color:var(--green);}
 .tag.short{color:var(--red);}
+.tag.be{color:var(--amber);}
 .row-actions{display:flex; gap:6px;}
 .icon-btn{
   background:transparent; border:1px solid var(--line); color:var(--muted);
@@ -191,22 +193,32 @@ tr.trow:hover{background:rgba(167,139,250,0.05);}
 }
 .icon-btn:hover{color:var(--text); border-color:var(--accent);}
 .empty-state{padding:44px 20px; text-align:center; color:var(--muted); font-size:13.5px;}
-
+ 
 /* ---------- history ---------- */
 .history-list{display:flex; flex-direction:column; gap:10px;}
 .hist-item{
   display:flex; align-items:center; justify-content:space-between;
   background:var(--surface); border:1px solid var(--line); border-radius:12px;
-  padding:14px 18px;
+  padding:14px 18px; cursor:pointer; transition:all .15s ease;
 }
+.hist-item:hover{border-color:var(--accent); transform:translateY(-1px);}
+.hist-item.viewing{border-color:var(--accent-bright); box-shadow:0 0 0 1px rgba(167,139,250,0.25);}
 .hist-left{display:flex; align-items:center; gap:12px;}
 .hist-dot{width:9px; height:9px; border-radius:50%;}
 .hist-dot.won{background:var(--green); box-shadow:0 0 8px var(--green);}
 .hist-dot.lost{background:var(--red); box-shadow:0 0 8px var(--red);}
+.hist-dot.active{background:var(--accent); box-shadow:0 0 8px var(--accent);}
 .hist-title{font-weight:600; font-size:13.5px;}
 .hist-sub{font-size:11.5px; color:var(--muted);}
 .hist-pnl{font-family:'JetBrains Mono'; font-weight:700; font-size:13.5px;}
-
+ 
+.viewing-banner{
+  display:none; align-items:center; justify-content:space-between; gap:14px;
+  background:var(--surface); border:1px solid var(--accent); border-radius:12px;
+  padding:12px 16px; margin:18px 0 -6px;
+}
+.viewing-banner span{font-size:13px; color:var(--muted);}
+ 
 .wl-strip{display:flex; gap:14px; margin-top:14px;}
 .wl-pill{
   flex:1; border-radius:12px; padding:14px 16px; border:1px solid var(--line);
@@ -216,7 +228,7 @@ tr.trow:hover{background:rgba(167,139,250,0.05);}
 .wl-pill.won .n{color:var(--green);}
 .wl-pill.lost .n{color:var(--red);}
 .wl-pill .l{font-size:10.5px; color:var(--muted); text-transform:uppercase; letter-spacing:0.6px; margin-top:2px;}
-
+ 
 /* ---------- modal ---------- */
 .overlay{
   position:fixed; inset:0; background:rgba(4,3,7,0.72); backdrop-filter:blur(4px);
@@ -257,7 +269,7 @@ tr.trow:hover{background:rgba(167,139,250,0.05);}
 .modal-actions .btn{flex:1;}
 .hint{font-size:11px; color:var(--muted); margin-top:4px;}
 .close-x{position:absolute; top:18px; right:18px; background:none; border:none; color:var(--muted); font-size:18px; cursor:pointer;}
-
+ 
 /* result modal */
 .result-modal{text-align:center; max-width:400px;}
 .result-icon{width:60px; height:60px; border-radius:50%; margin:0 auto 16px; display:flex; align-items:center; justify-content:center; font-size:26px;}
@@ -265,10 +277,10 @@ tr.trow:hover{background:rgba(167,139,250,0.05);}
 .result-icon.lose{background:rgba(243,106,106,0.15); color:var(--red); box-shadow:0 0 30px rgba(243,106,106,0.25);}
 .result-modal h2{font-family:'Space Grotesk'; font-size:20px; margin-bottom:8px;}
 .result-modal p{color:var(--muted); font-size:13.5px; line-height:1.5;}
-
+ 
 ::-webkit-scrollbar{width:8px;}
 ::-webkit-scrollbar-thumb{background:var(--surface-2); border-radius:8px;}
-
+ 
 /* ---------- auth screen ---------- */
 #authScreen{
   min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px;
@@ -303,9 +315,9 @@ tr.trow:hover{background:rgba(167,139,250,0.05);}
 </style>
 </head>
 <body>
-
+ 
 <div id="loadingScreen">Łączenie z bazą danych…</div>
-
+ 
 <div id="authScreen" style="display:none;">
   <div class="auth-card">
     <div class="auth-brand">
@@ -332,7 +344,7 @@ tr.trow:hover{background:rgba(167,139,250,0.05);}
     <div class="auth-status" id="authStatus"></div>
   </div>
 </div>
-
+ 
 <div id="appRoot">
 <div class="topbar">
   <div class="brand">
@@ -350,9 +362,14 @@ tr.trow:hover{background:rgba(167,139,250,0.05);}
     <button class="logout-btn" onclick="logout()">Wyloguj</button>
   </div>
 </div>
-
+ 
 <div class="wrap">
-
+ 
+  <div class="viewing-banner" id="viewingBanner">
+    <span id="viewingBannerText"></span>
+    <button class="btn small primary" onclick="backToActive()">Wróć do aktywnego podejścia</button>
+  </div>
+ 
   <div class="hero">
     <div class="hero-top">
       <div>
@@ -380,7 +397,7 @@ tr.trow:hover{background:rgba(167,139,250,0.05);}
       </svg>
     </div>
   </div>
-
+ 
   <div class="stat-grid">
     <div class="stat-card">
       <div class="label">Cel zysku</div>
@@ -407,17 +424,20 @@ tr.trow:hover{background:rgba(167,139,250,0.05);}
       <div class="stat-sub" id="subCons">Najlepszy dzień vs cały zysk</div>
     </div>
   </div>
-
+ 
   <div class="wl-strip">
     <div class="wl-pill won"><div class="n" id="wlWon">0</div><div class="l">Wygrane konta</div></div>
     <div class="wl-pill lost"><div class="n" id="wlLost">0</div><div class="l">Przegrane konta</div></div>
     <div class="wl-pill"><div class="n" id="wlRate">—</div><div class="l">Win rate (transakcje)</div></div>
   </div>
-
+ 
   <div class="section">
     <div class="section-head">
       <div class="section-title">Kalendarz P&L</div>
-      <button class="btn primary small" onclick="openTradeModal()">+ Dodaj trade</button>
+      <div style="display:flex; gap:8px;">
+        <button class="btn ghost small" onclick="openImportModal()">⇧ Import zbiorczy</button>
+        <button class="btn primary small" onclick="openTradeModal()">+ Dodaj trade</button>
+      </div>
     </div>
     <div class="cal-card">
       <div class="cal-nav">
@@ -428,7 +448,7 @@ tr.trow:hover{background:rgba(167,139,250,0.05);}
       <div class="cal-grid" id="calGrid"></div>
     </div>
   </div>
-
+ 
   <div class="section">
     <div class="section-head">
       <div class="section-title">Dziennik transakcji</div>
@@ -443,19 +463,19 @@ tr.trow:hover{background:rgba(167,139,250,0.05);}
       <div class="empty-state" id="tradeEmpty" style="display:none;">Brak transakcji — dodaj pierwszy trade, żeby zobaczyć statystyki.</div>
     </div>
   </div>
-
+ 
   <div class="section">
     <div class="section-head">
-      <div class="section-title">Historia kont</div>
+      <div class="section-title">Podejścia (kliknij, aby przeglądać/edytować)</div>
       <button class="btn danger-outline small" onclick="confirmResetAll()">Wyczyść wszystko</button>
     </div>
     <div class="history-list" id="historyList"></div>
   </div>
-
+ 
 </div>
 </div>
 <!-- /appRoot -->
-
+ 
 <!-- Trade modal -->
 <div class="overlay" id="tradeOverlay">
   <div class="modal">
@@ -480,6 +500,7 @@ tr.trow:hover{background:rgba(167,139,250,0.05);}
       <div class="toggle-group" id="directionToggle">
         <button type="button" class="toggle-btn active" data-value="long" onclick="selectDirection('long')">Long</button>
         <button type="button" class="toggle-btn" data-value="short" onclick="selectDirection('short')">Short</button>
+        <button type="button" class="toggle-btn" data-value="be" onclick="selectDirection('be')">BE</button>
       </div>
     </div>
     <div class="field">
@@ -496,12 +517,33 @@ tr.trow:hover{background:rgba(167,139,250,0.05);}
     </div>
   </div>
 </div>
-
+ 
+<!-- Import modal -->
+<div class="overlay" id="importOverlay">
+  <div class="modal" style="max-width:560px;">
+    <button class="close-x" onclick="closeImportModal()">✕</button>
+    <h3>Import zbiorczy transakcji</h3>
+    <p style="font-size:12.5px; color:var(--muted); margin-bottom:14px; line-height:1.5;">
+      Jedna linia = jeden wpis. Format: <strong>data,kwota,notatka</strong> (notatka opcjonalna).<br>
+      Data w formacie RRRR-MM-DD. Kwota z kropką dziesiętną, ujemna dla straty.
+    </p>
+    <div class="field">
+      <label>Dane do importu</label>
+      <textarea id="importText" rows="10" placeholder="2026-09-02,157.48,5 trades&#10;2026-09-03,-187.56,5 trades&#10;2026-09-04,99.22,3 trades" style="font-family:'JetBrains Mono'; font-size:12.5px;"></textarea>
+    </div>
+    <div class="hint" id="importPreview"></div>
+    <div class="modal-actions">
+      <button class="btn ghost" onclick="closeImportModal()">Anuluj</button>
+      <button class="btn primary" onclick="submitImport()">Importuj</button>
+    </div>
+  </div>
+</div>
+ 
 <!-- Result modal (win/lose account) -->
 <div class="overlay" id="resultOverlay">
   <div class="modal result-modal" id="resultModalBody"></div>
 </div>
-
+ 
 <script>
 /* ===================== FIREBASE CONFIG =====================
    1) Wejdź na https://console.firebase.google.com i utwórz darmowy projekt.
@@ -520,42 +562,94 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
-
+ 
 /* ===================== CONFIG (reguły challenge) ===================== */
 const RULES = {
-  evaluation: { target: 1500, trailingDD: 1000, minDays: 3, consistency: 0.4 },
-  funded:     { trailingDD: 1000, dailyLossLimit: 500, consistency: 0.4 }
+  evaluation: { target: 1500, trailingDD: 1000, minDays: 3, consistency: 0.4 }
 };
-
+ 
 /* ===================== STATE ===================== */
 let state = null;
 let currentUser = null;
 let saveTimer = null;
-
+let viewAttemptId = null; // które podejście jest właśnie oglądane/edytowane (lokalne, nie synchronizowane)
+ 
+function makeAttempt(){
+  return { id: uid(), trades: [], result: null, startDate: todayISO(), endDate: null };
+}
 function defaultState(){
+  const first = makeAttempt();
   return {
-    phase:'evaluation',
-    attemptNumber:1,
-    fundedRound:1,
-    wonCount:0,
-    lostCount:0,
-    trades:[],
-    allTrades:[],
-    history:[],
-    calYear:new Date().getFullYear(),
-    calMonth:new Date().getMonth()
+    attempts: [first],
+    allTrades: [],
+    calYear: new Date().getFullYear(),
+    calMonth: new Date().getMonth()
   };
 }
-
+ 
+// Zamienia stary format danych (phase/trades/history) na nowy format z listą "attempts"
+function normalizeState(raw){
+  if(!raw) return defaultState();
+  if(Array.isArray(raw.attempts) && raw.attempts.length){
+    raw.attempts.forEach(a=>{ if(!a.trades) a.trades = []; });
+    if(!raw.allTrades) raw.allTrades = [];
+    if(raw.calYear == null) raw.calYear = new Date().getFullYear();
+    if(raw.calMonth == null) raw.calMonth = new Date().getMonth();
+    return raw;
+  }
+  // migracja starych danych (przed wprowadzeniem wielu podejść)
+  const attempts = [];
+  if(Array.isArray(raw.history)){
+    raw.history.forEach(h=>{
+      attempts.push({
+        id: uid(), trades: [], result: h.result, startDate: null, endDate: h.endDate,
+        legacy: true, legacyTotalPnl: h.totalPnl, legacyTradingDays: h.tradingDays, legacyTradesCount: h.tradesCount
+      });
+    });
+  }
+  attempts.push({ id: uid(), trades: raw.trades || [], result: null, startDate: todayISO(), endDate: null });
+  return {
+    attempts,
+    allTrades: raw.allTrades || [],
+    calYear: raw.calYear || new Date().getFullYear(),
+    calMonth: raw.calMonth != null ? raw.calMonth : new Date().getMonth()
+  };
+}
+ 
+function getActiveAttempt(){
+  for(let i=state.attempts.length-1; i>=0; i--){
+    if(state.attempts[i].result === null) return state.attempts[i];
+  }
+  const a = makeAttempt();
+  state.attempts.push(a);
+  return a;
+}
+function getViewAttempt(){
+  let a = state.attempts.find(x=>x.id === viewAttemptId);
+  if(!a){ a = getActiveAttempt(); viewAttemptId = a.id; }
+  return a;
+}
+function isViewingActive(){
+  return getViewAttempt().id === getActiveAttempt().id;
+}
+function viewAttempt(id){
+  viewAttemptId = id;
+  renderAll();
+}
+function backToActive(){
+  viewAttemptId = getActiveAttempt().id;
+  renderAll();
+}
+ 
 function setSyncStatus(text, kind){
   const el = document.getElementById('syncStatusTag');
   if(!el) return;
   el.textContent = text;
   el.style.color = kind === 'error' ? 'var(--red)' : kind === 'ok' ? 'var(--green)' : 'var(--muted)';
 }
-
+ 
 function localCacheKey(uid){ return 'tradeifyTrackerV1_' + uid; }
-
+ 
 // Zapis: od razu do lokalnego cache (szybkość), do Firestore z małym opóźnieniem (mniej zapisów)
 function saveState(){
   if(!currentUser) return;
@@ -571,42 +665,34 @@ function saveState(){
     });
   }, 600);
 }
-
-let firestoreUnsub = null;
-
+ 
 async function loadStateForUser(uid){
   // najpierw lokalny cache, żeby appka odpaliła się natychmiast
   const cached = localStorage.getItem(localCacheKey(uid));
-  state = cached ? Object.assign(defaultState(), JSON.parse(cached)) : defaultState();
+  state = normalizeState(cached ? JSON.parse(cached) : null);
+  viewAttemptId = getActiveAttempt().id;
   renderAll();
-
-  if(firestoreUnsub){ firestoreUnsub(); firestoreUnsub = null; }
-
+ 
+  // potem świeże dane z Firestore (źródło prawdy, synchronizacja między urządzeniami)
   setSyncStatus('Synchronizowanie…', 'muted');
   try{
     const doc = await db.collection('users').doc(uid).get();
-    if(!doc.exists){
+    if(doc.exists){
+      state = normalizeState(doc.data());
+    } else {
       state = defaultState();
       await db.collection('users').doc(uid).set(state);
     }
-  }catch(err){
-    console.error('Błąd pierwszego pobrania z Firestore:', err);
-  }
-
-  // Nasłuch na żywo: jeśli Cloudflare Worker dopisze nowe trejdy z Capital.com
-  // w tle, appka je pokaże automatycznie bez odświeżania strony.
-  firestoreUnsub = db.collection('users').doc(uid).onSnapshot(doc=>{
-    if(!doc.exists) return;
-    state = Object.assign(defaultState(), doc.data());
+    viewAttemptId = getActiveAttempt().id;
     localStorage.setItem(localCacheKey(uid), JSON.stringify(state));
     renderAll();
     setSyncStatus('Zsynchronizowano ✓', 'ok');
-  }, err=>{
-    console.error('Błąd nasłuchu Firestore:', err);
+  }catch(err){
+    console.error('Błąd pobierania z Firestore:', err);
     setSyncStatus('Błąd synchronizacji: ' + err.code, 'error');
-  });
+  }
 }
-
+ 
 /* ===================== AUTH UI ===================== */
 let authMode = 'login';
 function switchAuthTab(mode){
@@ -616,7 +702,7 @@ function switchAuthTab(mode){
   document.getElementById('authSubmitBtn').textContent = mode==='login' ? 'Zaloguj się' : 'Załóż konto';
   document.getElementById('authError').textContent = '';
 }
-
+ 
 function friendlyAuthError(code){
   const map = {
     'auth/invalid-email':'Nieprawidłowy adres e-mail.',
@@ -629,25 +715,25 @@ function friendlyAuthError(code){
   };
   return map[code] || 'Coś poszło nie tak. Spróbuj ponownie.';
 }
-
+ 
 function submitAuth(){
   const email = document.getElementById('authEmail').value.trim();
   const password = document.getElementById('authPassword').value;
   const errEl = document.getElementById('authError');
   const statusEl = document.getElementById('authStatus');
   errEl.textContent = '';
-
+ 
   if(!email || !password){ errEl.textContent = 'Podaj e-mail i hasło.'; return; }
   if(firebaseConfig.apiKey === 'WKLEJ_TU_apiKey'){
     errEl.textContent = 'Najpierw skonfiguruj Firebase w kodzie (sekcja FIREBASE CONFIG na górze pliku).';
     return;
   }
-
+ 
   statusEl.textContent = 'Chwileczkę…';
   const action = authMode === 'login'
     ? auth.signInWithEmailAndPassword(email, password)
     : auth.createUserWithEmailAndPassword(email, password);
-
+ 
   action.then(()=>{
     statusEl.textContent = '';
   }).catch(err=>{
@@ -655,12 +741,11 @@ function submitAuth(){
     errEl.textContent = friendlyAuthError(err.code);
   });
 }
-
+ 
 function logout(){
-  if(firestoreUnsub){ firestoreUnsub(); firestoreUnsub = null; }
   auth.signOut();
 }
-
+ 
 auth.onAuthStateChanged(user=>{
   document.getElementById('loadingScreen').style.display = 'none';
   if(user){
@@ -679,7 +764,7 @@ auth.onAuthStateChanged(user=>{
     document.getElementById('authError').textContent = '';
   }
 });
-
+ 
 /* ===================== HELPERS ===================== */
 function fmtMoney(n){
   const sign = n < 0 ? '-' : '';
@@ -692,10 +777,10 @@ function fmtMoneyPrecise(n){
 }
 function todayISO(){ return new Date().toISOString().slice(0,10); }
 function uid(){ return 't_' + Date.now() + '_' + Math.floor(Math.random()*10000); }
-
+ 
 /* ===================== METRICS ===================== */
-function computeMetrics(){
-  const trades = state.trades.slice().sort((a,b)=>a.date.localeCompare(b.date));
+function computeMetrics(attempt){
+  const trades = (attempt.trades||[]).slice().sort((a,b)=>a.date.localeCompare(b.date));
   const dailyMap = {};
   trades.forEach(t=>{ dailyMap[t.date] = (dailyMap[t.date]||0) + Number(t.pnl); });
   const dates = Object.keys(dailyMap).sort();
@@ -716,10 +801,10 @@ function computeMetrics(){
   const consistencyRatio = totalPnl > 0 ? (bestDay / totalPnl) : 0;
   let worstDay = 0;
   dates.forEach(d=>{ if(dailyMap[d] < worstDay) worstDay = dailyMap[d]; });
-
+ 
   return { trades, dailyMap, dates, totalPnl, peak, currentDD, maxDD, tradingDays, bestDay, worstDay, consistencyRatio, equitySeries };
 }
-
+ 
 /* ===================== RENDER: HERO / CHART ===================== */
 function renderHero(m){
   const el = document.getElementById('heroPnl');
@@ -741,41 +826,40 @@ function renderHero(m){
   let d = '';
   pts.forEach((p,i)=>{ d += (i===0?'M':'L') + p[0].toFixed(1) + ',' + p[1].toFixed(1) + ' '; });
   document.getElementById('eqLinePath').setAttribute('d', d || 'M0,70 L1000,70');
-
+ 
   let fillD = d;
   if(pts.length){
     fillD += `L${pts[pts.length-1][0].toFixed(1)},${h} L${pts[0][0].toFixed(1)},${h} Z`;
   }
   document.getElementById('eqFillPath').setAttribute('d', fillD);
-
+ 
   // restart draw animation
   const linePath = document.getElementById('eqLinePath');
   linePath.style.animation = 'none';
   linePath.offsetHeight;
   linePath.style.animation = null;
 }
-
+ 
 /* ===================== RENDER: STATS ===================== */
-function renderStats(m){
-  const rules = RULES[state.phase];
-  document.getElementById('phaseBadge').textContent = state.phase === 'evaluation' ? 'Evaluation' : 'Funded';
-  document.getElementById('phaseBadge').className = 'phase-badge ' + (state.phase === 'evaluation' ? 'eval' : 'funded');
-  document.getElementById('attemptTag').textContent = state.phase === 'evaluation'
-    ? `Podejście #${state.attemptNumber}`
-    : `Runda funded #${state.fundedRound}`;
-
-  // Target (only meaningful in evaluation; in funded show total pnl trend instead)
-  if(state.phase === 'evaluation'){
-    const pct = Math.max(0, Math.min(100, (m.totalPnl / rules.target) * 100));
-    document.getElementById('statTarget').textContent = `${fmtMoney(m.totalPnl)} / ${fmtMoney(rules.target)}`;
-    document.getElementById('barTarget').style.width = pct + '%';
-    document.getElementById('subTarget').textContent = pct >= 100 ? 'Cel osiągnięty ✓' : Math.round(pct) + '% celu';
+function renderStats(m, attempt){
+  const rules = RULES.evaluation;
+  const badge = document.getElementById('phaseBadge');
+  if(attempt.result === 'won'){
+    badge.textContent = 'Zaliczone ✓'; badge.className = 'phase-badge won';
+  } else if(attempt.result === 'lost'){
+    badge.textContent = 'Przegrane'; badge.className = 'phase-badge lost';
   } else {
-    document.getElementById('statTarget').textContent = fmtMoney(m.totalPnl) + ' (funded)';
-    document.getElementById('barTarget').style.width = '100%';
-    document.getElementById('subTarget').textContent = 'Brak celu — konto funded';
+    badge.textContent = 'Evaluation'; badge.className = 'phase-badge eval';
   }
-
+  const idx = state.attempts.findIndex(a=>a.id===attempt.id);
+  document.getElementById('attemptTag').textContent = `Podejście #${idx+1}`;
+ 
+  // Target
+  const pct = Math.max(0, Math.min(100, (m.totalPnl / rules.target) * 100));
+  document.getElementById('statTarget').textContent = `${fmtMoney(m.totalPnl)} / ${fmtMoney(rules.target)}`;
+  document.getElementById('barTarget').style.width = pct + '%';
+  document.getElementById('subTarget').textContent = pct >= 100 ? 'Cel osiągnięty ✓' : Math.round(pct) + '% celu';
+ 
   // Drawdown
   const ddPct = Math.max(0, Math.min(100, (m.currentDD / rules.trailingDD) * 100));
   document.getElementById('statDD').textContent = `${fmtMoney(m.currentDD)} / ${fmtMoney(rules.trailingDD)}`;
@@ -784,19 +868,13 @@ function renderStats(m){
   if(ddPct >= 100){ subDD.textContent = 'Przekroczony drawdown'; subDD.className = 'stat-sub bad'; }
   else if(ddPct >= 70){ subDD.textContent = 'Blisko limitu — uważaj'; subDD.className = 'stat-sub warn'; }
   else { subDD.textContent = 'Bufor bezpieczny'; subDD.className = 'stat-sub ok'; }
-
-  // Days (only relevant for evaluation)
-  if(state.phase === 'evaluation'){
-    const dPct = Math.min(100, (m.tradingDays / rules.minDays) * 100);
-    document.getElementById('statDays').textContent = `${m.tradingDays} / ${rules.minDays}`;
-    document.getElementById('barDays').style.width = dPct + '%';
-    document.getElementById('subDays').textContent = m.tradingDays >= rules.minDays ? 'Minimum spełnione ✓' : 'Minimum do zaliczenia';
-  } else {
-    document.getElementById('statDays').textContent = `${m.tradingDays} dni`;
-    document.getElementById('barDays').style.width = '100%';
-    document.getElementById('subDays').textContent = 'Bez wymogu minimum';
-  }
-
+ 
+  // Days
+  const dPct = Math.min(100, (m.tradingDays / rules.minDays) * 100);
+  document.getElementById('statDays').textContent = `${m.tradingDays} / ${rules.minDays}`;
+  document.getElementById('barDays').style.width = dPct + '%';
+  document.getElementById('subDays').textContent = m.tradingDays >= rules.minDays ? 'Minimum spełnione ✓' : 'Minimum do zaliczenia';
+ 
   // Consistency
   const consPct = Math.min(100, m.consistencyRatio * 100);
   document.getElementById('statCons').textContent = m.totalPnl > 0 ? Math.round(consPct) + '%' : '—';
@@ -811,19 +889,21 @@ function renderStats(m){
   } else {
     subCons.textContent = 'W normie'; subCons.className = 'stat-sub ok';
   }
-
-  // Win/Loss strip
-  document.getElementById('wlWon').textContent = state.wonCount;
-  document.getElementById('wlLost').textContent = state.lostCount;
+ 
+  // Win/Loss strip — liczone z listy podejść (attempts), nie z osobnych liczników
+  const wonCount = state.attempts.filter(a=>a.result==='won').length;
+  const lostCount = state.attempts.filter(a=>a.result==='lost').length;
+  document.getElementById('wlWon').textContent = wonCount;
+  document.getElementById('wlLost').textContent = lostCount;
   const allTrades = state.allTrades || [];
   const winningTrades = allTrades.filter(t => Number(t.pnl) > 0).length;
   document.getElementById('wlRate').textContent = allTrades.length === 0 ? '—' : Math.round((winningTrades/allTrades.length)*100) + '%';
 }
-
+ 
 /* ===================== RENDER: CALENDAR ===================== */
 const DOW = ['PON','WT','ŚR','CZW','PT','SOB','NDZ'];
 const MONTHS_PL = ['Styczeń','Luty','Marzec','Kwiecień','Maj','Czerwiec','Lipiec','Sierpień','Wrzesień','Październik','Listopad','Grudzień'];
-
+ 
 function changeMonth(delta){
   state.calMonth += delta;
   if(state.calMonth > 11){ state.calMonth = 0; state.calYear++; }
@@ -831,7 +911,7 @@ function changeMonth(delta){
   saveState();
   renderCalendar(computeMetrics());
 }
-
+ 
 function renderCalendar(m){
   document.getElementById('monthLabel').textContent = `${MONTHS_PL[state.calMonth]} ${state.calYear}`;
   const grid = document.getElementById('calGrid');
@@ -842,13 +922,13 @@ function renderCalendar(m){
     el.textContent = d;
     grid.appendChild(el);
   });
-
+ 
   const firstDay = new Date(state.calYear, state.calMonth, 1);
   let startOffset = firstDay.getDay() - 1; // Monday=0
   if(startOffset < 0) startOffset = 6;
   const daysInMonth = new Date(state.calYear, state.calMonth+1, 0).getDate();
   const todayStr = todayISO();
-
+ 
   for(let i=0;i<startOffset;i++){
     const el = document.createElement('div');
     el.className = 'cal-day empty';
@@ -864,12 +944,12 @@ function renderCalendar(m){
     grid.appendChild(el);
   }
 }
-
+ 
 /* ===================== RENDER: TRADE TABLE ===================== */
 function renderTradeTable(m){
   const tbody = document.getElementById('tradeTbody');
   const emptyEl = document.getElementById('tradeEmpty');
-  const sorted = state.trades.slice().sort((a,b)=> b.date.localeCompare(a.date) || b.id.localeCompare(a.id));
+  const sorted = m.trades.slice().sort((a,b)=> b.date.localeCompare(a.date) || b.id.localeCompare(a.id));
   if(sorted.length === 0){
     tbody.innerHTML = '';
     emptyEl.style.display = 'block';
@@ -880,7 +960,7 @@ function renderTradeTable(m){
     <tr class="trow">
       <td class="mono">${t.date}</td>
       <td>${t.instrument}</td>
-      <td><span class="tag ${t.direction}">${t.direction === 'long' ? 'LONG' : 'SHORT'}</span></td>
+      <td><span class="tag ${t.direction}">${t.direction === 'long' ? 'LONG' : t.direction === 'short' ? 'SHORT' : 'BE'}</span></td>
       <td class="pnl-cell ${t.pnl>=0?'pos':'neg'}">${fmtMoneyPrecise(t.pnl)}</td>
       <td style="color:var(--muted); max-width:160px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${t.notes || ''}</td>
       <td>
@@ -892,39 +972,68 @@ function renderTradeTable(m){
     </tr>
   `).join('');
 }
-
+ 
 /* ===================== RENDER: HISTORY ===================== */
 function renderHistory(){
   const list = document.getElementById('historyList');
-  if(state.history.length === 0){
-    list.innerHTML = '<div class="empty-state">Brak zakończonych kont — historia pojawi się po zaliczeniu lub przegraniu ewaluacji.</div>';
+  if(!state.attempts.length){
+    list.innerHTML = '<div class="empty-state">Brak podejść.</div>';
     return;
   }
-  list.innerHTML = state.history.slice().reverse().map(h => `
-    <div class="hist-item">
+  const viewId = getViewAttempt().id;
+  const activeId = getActiveAttempt().id;
+  const sorted = state.attempts.slice().reverse();
+  list.innerHTML = sorted.map(a=>{
+    const idx = state.attempts.findIndex(x=>x.id===a.id);
+    const totalPnl = a.legacy ? (a.legacyTotalPnl||0) : (a.trades||[]).reduce((s,t)=>s+Number(t.pnl),0);
+    const tradesCount = a.legacy ? (a.legacyTradesCount||0) : (a.trades||[]).length;
+    const statusLabel = a.result === 'won' ? 'Zaliczone' : a.result === 'lost' ? 'Przegrane' : 'W trakcie';
+    const dotClass = a.result === 'won' ? 'won' : a.result === 'lost' ? 'lost' : 'active';
+    const activeTag = a.id === activeId ? ' · aktywne' : '';
+    const legacyTag = a.legacy ? ' · dane archiwalne (bez edycji)' : '';
+    return `
+    <div class="hist-item ${a.id===viewId ? 'viewing':''}" onclick="viewAttempt('${a.id}')">
       <div class="hist-left">
-        <div class="hist-dot ${h.result}"></div>
+        <div class="hist-dot ${dotClass}"></div>
         <div>
-          <div class="hist-title">${h.phase === 'evaluation' ? 'Evaluation' : 'Funded'} — ${h.result === 'won' ? 'Zaliczone' : 'Przegrane'}</div>
-          <div class="hist-sub">${h.endDate} · ${h.tradingDays} dni · ${h.tradesCount} transakcji</div>
+          <div class="hist-title">Podejście #${idx+1} — ${statusLabel}${activeTag}</div>
+          <div class="hist-sub">${a.endDate || 'w trakcie'} · ${tradesCount} transakcji${legacyTag}</div>
         </div>
       </div>
-      <div class="hist-pnl ${h.totalPnl>=0?'pos':'neg'}" style="color:${h.totalPnl>=0?'var(--green)':'var(--red)'}">${fmtMoneyPrecise(h.totalPnl)}</div>
-    </div>
-  `).join('');
+      <div class="hist-pnl" style="color:${totalPnl>=0?'var(--green)':'var(--red)'}">${fmtMoneyPrecise(totalPnl)}</div>
+    </div>`;
+  }).join('');
 }
-
+ 
+/* ===================== VIEWING BANNER ===================== */
+function renderViewingBanner(){
+  const banner = document.getElementById('viewingBanner');
+  const attempt = getViewAttempt();
+  const active = getActiveAttempt();
+  const idx = state.attempts.findIndex(a=>a.id===attempt.id);
+  if(attempt.id === active.id){
+    banner.style.display = 'none';
+    return;
+  }
+  banner.style.display = 'flex';
+  const label = attempt.result === 'won' ? 'zaliczone' : attempt.result === 'lost' ? 'przegrane' : 'archiwalne';
+  document.getElementById('viewingBannerText').textContent =
+    `Przeglądasz i edytujesz Podejście #${idx+1} (${label}) — zmiany tu nie wpływają na aktywne podejście.`;
+}
+ 
 /* ===================== MAIN RENDER ===================== */
 function renderAll(){
-  const m = computeMetrics();
+  const attempt = getViewAttempt();
+  const m = computeMetrics(attempt);
   renderHero(m);
-  renderStats(m);
+  renderStats(m, attempt);
   renderCalendar(m);
   renderTradeTable(m);
   renderHistory();
-  checkPhaseTransition(m);
+  renderViewingBanner();
+  if(isViewingActive()) checkPhaseTransition(m);
 }
-
+ 
 /* ===================== TRADE MODAL ===================== */
 function selectInstrument(val){
   document.getElementById('fInstrument').value = val;
@@ -958,20 +1067,21 @@ function saveTrade(){
   const direction = document.getElementById('fDirection').value;
   const pnlRaw = document.getElementById('fPnl').value;
   const notes = document.getElementById('fNotes').value.trim();
-
+ 
   if(!date){ alert('Podaj datę transakcji.'); return; }
   if(pnlRaw === ''){ alert('Podaj wynik P&L.'); return; }
   const pnl = Number(pnlRaw);
   if(!state.allTrades) state.allTrades = [];
-
+  const attempt = getViewAttempt();
+ 
   if(id){
-    const t = state.trades.find(x=>x.id===id);
+    const t = attempt.trades.find(x=>x.id===id);
     if(t){ Object.assign(t, {date, instrument, direction, pnl, notes}); }
     const tAll = state.allTrades.find(x=>x.id===id);
     if(tAll){ Object.assign(tAll, {date, instrument, direction, pnl, notes}); }
   } else {
     const newTrade = { id: uid(), date, instrument, direction, pnl, notes };
-    state.trades.push(newTrade);
+    attempt.trades.push(newTrade);
     state.allTrades.push(newTrade);
   }
   saveState();
@@ -979,7 +1089,8 @@ function saveTrade(){
   renderAll();
 }
 function editTrade(id){
-  const t = state.trades.find(x=>x.id===id);
+  const attempt = getViewAttempt();
+  const t = attempt.trades.find(x=>x.id===id);
   if(!t) return;
   document.getElementById('tradeModalTitle').textContent = 'Edytuj trade';
   document.getElementById('tradeId').value = t.id;
@@ -992,62 +1103,96 @@ function editTrade(id){
 }
 function deleteTrade(id){
   if(!confirm('Usunąć tę transakcję?')) return;
-  state.trades = state.trades.filter(x=>x.id!==id);
+  const attempt = getViewAttempt();
+  attempt.trades = attempt.trades.filter(x=>x.id!==id);
   if(state.allTrades) state.allTrades = state.allTrades.filter(x=>x.id!==id);
   saveState();
   renderAll();
 }
-
+ 
+/* ===================== BULK IMPORT ===================== */
+function openImportModal(){
+  document.getElementById('importText').value = '';
+  document.getElementById('importPreview').textContent = '';
+  document.getElementById('importOverlay').classList.add('show');
+}
+function closeImportModal(){
+  document.getElementById('importOverlay').classList.remove('show');
+}
+function parseImportLines(raw){
+  const lines = raw.split('\n').map(l=>l.trim()).filter(l=>l.length);
+  const parsed = [];
+  const errors = [];
+  lines.forEach((line, i)=>{
+    const parts = line.split(',');
+    if(parts.length < 2){ errors.push(`Linia ${i+1}: brak daty lub kwoty`); return; }
+    const date = parts[0].trim();
+    const pnl = Number(parts[1].trim());
+    const notes = parts.slice(2).join(',').trim();
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(date)){ errors.push(`Linia ${i+1}: zła data "${date}" (oczekiwano RRRR-MM-DD)`); return; }
+    if(isNaN(pnl)){ errors.push(`Linia ${i+1}: zła kwota "${parts[1]}"`); return; }
+    const direction = pnl > 0 ? 'long' : pnl < 0 ? 'short' : 'be';
+    parsed.push({ date, pnl, notes: notes || 'Import zbiorczy', instrument:'MNQ', direction });
+  });
+  return { parsed, errors };
+}
+function submitImport(){
+  const raw = document.getElementById('importText').value;
+  const { parsed, errors } = parseImportLines(raw);
+  if(parsed.length === 0){
+    document.getElementById('importPreview').textContent = errors.length ? errors.join(' · ') : 'Brak poprawnych linii do zaimportowania.';
+    document.getElementById('importPreview').className = 'hint';
+    document.getElementById('importPreview').style.color = 'var(--red)';
+    return;
+  }
+  const attempt = getViewAttempt();
+  if(!state.allTrades) state.allTrades = [];
+  parsed.forEach(p=>{
+    const newTrade = { id: uid(), date: p.date, instrument: p.instrument, direction: p.direction, pnl: p.pnl, notes: p.notes };
+    attempt.trades.push(newTrade);
+    state.allTrades.push(newTrade);
+  });
+  saveState();
+  closeImportModal();
+  renderAll();
+  if(errors.length){
+    alert(`Zaimportowano ${parsed.length} wpisów. Pominięto ${errors.length}:\n` + errors.join('\n'));
+  }
+}
+ 
 /* ===================== PHASE TRANSITIONS ===================== */
 function checkPhaseTransition(m){
-  const rules = RULES[state.phase];
+  const rules = RULES.evaluation;
   const ddBreached = m.currentDD >= rules.trailingDD && m.trades.length > 0;
-
+ 
   if(ddBreached){
-    archiveAttempt(m, 'lost');
+    archiveActiveAttempt('lost');
     showResultModal('lose', m);
     return;
   }
-
-  if(state.phase === 'evaluation'){
-    const rulesE = RULES.evaluation;
-    const targetHit = m.totalPnl >= rulesE.target;
-    const daysOk = m.tradingDays >= rulesE.minDays;
-    const consOk = m.totalPnl <= 0 || m.consistencyRatio <= rulesE.consistency;
-    if(targetHit && daysOk && consOk){
-      archiveAttempt(m, 'won');
-      showResultModal('win', m);
-      return;
-    }
+ 
+  const targetHit = m.totalPnl >= rules.target;
+  const daysOk = m.tradingDays >= rules.minDays;
+  const consOk = m.totalPnl <= 0 || m.consistencyRatio <= rules.consistency;
+  if(targetHit && daysOk && consOk){
+    archiveActiveAttempt('won');
+    showResultModal('win', m);
+    return;
   }
 }
-
-function archiveAttempt(m, result){
-  state.history.push({
-    phase: state.phase,
-    result,
-    endDate: todayISO(),
-    totalPnl: m.totalPnl,
-    tradingDays: m.tradingDays,
-    tradesCount: m.trades.length
-  });
-  if(result === 'won') state.wonCount++;
-  if(result === 'lost') state.lostCount++;
-
-  if(result === 'won' && state.phase === 'evaluation'){
-    state.phase = 'funded';
-    state.fundedRound = 1;
-  } else if(result === 'lost'){
-    state.phase = 'evaluation';
-    state.attemptNumber++;
-  } else if(result === 'lost' && state.phase === 'funded'){
-    state.phase = 'evaluation';
-    state.attemptNumber++;
-  }
-  state.trades = [];
+ 
+// Zamyka aktywne podejście (wynik: won/lost) i od razu otwiera nowe, puste podejście Evaluation.
+// Zakończone podejście NIE znika — zostaje w historii i można je dalej przeglądać i edytować.
+function archiveActiveAttempt(result){
+  const active = getActiveAttempt();
+  active.result = result;
+  active.endDate = todayISO();
+  const fresh = makeAttempt();
+  state.attempts.push(fresh);
+  viewAttemptId = fresh.id;
   saveState();
 }
-
+ 
 function showResultModal(type, m){
   const body = document.getElementById('resultModalBody');
   if(type === 'win'){
@@ -1055,15 +1200,17 @@ function showResultModal(type, m){
       <div class="result-icon win">✓</div>
       <h2>Ewaluacja zaliczona!</h2>
       <p>Zysk ${fmtMoneyPrecise(m.totalPnl)} przy ${m.tradingDays} dniach tradingowych i konsystencji w normie.
-      Konto przechodzi w fazę <strong>Funded</strong>. Statystyki tego podejścia zostały zresetowane i zapisane w historii.</p>
+      To podejście zostaje zapisane jako <strong>zaliczone</strong> — możesz je dalej przeglądać i edytować w historii poniżej.
+      Startuje nowe, czyste podejście <strong>Evaluation</strong>.</p>
       <div class="modal-actions"><button class="btn primary" onclick="closeResultModal()">Świetnie, dalej!</button></div>
     `;
   } else {
     body.innerHTML = `
       <div class="result-icon lose">✕</div>
-      <h2>Konto zakończone</h2>
-      <p>Przekroczono maksymalny trailing drawdown ($1 000 od szczytu salda). Konto zostało zaliczone jako przegrane
-      i zarchiwizowane. Zaczynasz nowe podejście Evaluation od zera.</p>
+      <h2>Podejście przegrane</h2>
+      <p>Przekroczono maksymalny trailing drawdown ($1 000 od szczytu salda). To podejście zostaje zapisane jako
+      <strong>przegrane</strong> — możesz je dalej przeglądać i edytować w historii poniżej.
+      Startuje nowe, czyste podejście <strong>Evaluation</strong>.</p>
       <div class="modal-actions"><button class="btn primary" onclick="closeResultModal()">Rozumiem, restart</button></div>
     `;
   }
@@ -1073,18 +1220,21 @@ function closeResultModal(){
   document.getElementById('resultOverlay').classList.remove('show');
   renderAll();
 }
-
+ 
 /* ===================== RESET ALL ===================== */
 function confirmResetAll(){
-  if(!confirm('To usunie WSZYSTKIE dane (transakcje, historię, statystyki won/lost). Kontynuować?')) return;
+  if(!confirm('To usunie WSZYSTKIE dane (wszystkie podejścia, transakcje, statystyki won/lost). Kontynuować?')) return;
   state = defaultState();
+  viewAttemptId = state.attempts[0].id;
   saveState();
   renderAll();
 }
-
+ 
 /* ===================== INIT ===================== */
 document.getElementById('tradeOverlay').addEventListener('click', e=>{ if(e.target.id==='tradeOverlay') closeTradeModal(); });
-
+document.getElementById('importOverlay').addEventListener('click', e=>{ if(e.target.id==='importOverlay') closeImportModal(); });
+ 
 </script>
 </body>
 </html>
+ 
