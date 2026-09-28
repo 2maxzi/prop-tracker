@@ -3,13 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PROP TRACKER — Tradeify Select 25K</title>
-<link rel="manifest" href="manifest.json">
+<title>PROP TRACKER HUD — Tradeify Select 25K</title>
+<link rel="manifest" href="hud-manifest.json">
 <meta name="theme-color" content="#291e3c">
 <link rel="apple-touch-icon" href="icon-192.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Prop Tracker">
+<meta name="apple-mobile-web-app-title" content="PT HUD">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
@@ -318,6 +318,94 @@ tr.trow:hover{background:rgba(167,139,250,0.05);}
   min-height:100vh; display:flex; align-items:center; justify-content:center;
   color:var(--muted); font-size:13px; letter-spacing:0.4px;
 }
+/* ===================== HUD LAYOUT (telefon) ===================== */
+.hud-topbar{
+  display:flex; align-items:center; justify-content:space-between;
+  padding:calc(14px + env(safe-area-inset-top, 0px)) 18px 14px;
+  border-bottom:1px solid var(--line);
+  position:sticky; top:0; z-index:40;
+  background:rgba(8,7,11,0.85); backdrop-filter:blur(14px);
+}
+.hud-brand{display:flex; align-items:center; gap:10px;}
+.hud-topbar-right{display:flex; align-items:center; gap:10px;}
+.sync-pill{font-size:10.5px; color:var(--muted); white-space:nowrap;}
+.hud-main{
+  max-width:520px; margin:0 auto;
+  padding:16px 16px calc(96px + env(safe-area-inset-bottom, 0px));
+}
+.hud-panel{display:none;}
+.hud-panel.active{display:block; animation:fadein .25s ease;}
+.hud-panel-head{display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;}
+
+/* gauges */
+.gauge-wrap{position:relative; width:220px; height:220px; margin:6px auto 18px;}
+.gauge-svg{width:100%; height:100%; transform:rotate(-90deg);}
+.gauge-track{fill:none; stroke:rgba(255,255,255,0.06); stroke-width:12;}
+.gauge-ring{fill:none; stroke-width:12; stroke-linecap:round; transition:stroke-dashoffset .6s ease;}
+.gauge-ring.dd{stroke:var(--red);}
+.gauge-ring.target{stroke:var(--accent);}
+.gauge-center{
+  position:absolute; inset:0; display:flex; flex-direction:column;
+  align-items:center; justify-content:center; text-align:center; gap:4px;
+}
+.gauge-center .gauge-label{font-size:10.5px; letter-spacing:1px; text-transform:uppercase; color:var(--muted);}
+.gauge-legend{display:flex; justify-content:center; gap:18px; margin-bottom:20px; font-size:11.5px; color:var(--muted);}
+.gauge-legend span{display:inline-flex; align-items:center; gap:6px;}
+.gauge-legend .dot{width:8px; height:8px; border-radius:50%;}
+.gauge-legend .dot.dd{background:var(--red);}
+.gauge-legend .dot.target{background:var(--accent);}
+
+.hud-badge-row{display:flex; align-items:center; justify-content:center; gap:10px; margin-bottom:10px;}
+
+/* chip grid */
+.hud-chip-grid{display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:18px;}
+.hud-chip{background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:14px 16px;}
+.hud-chip .label{font-size:10.5px; text-transform:uppercase; letter-spacing:0.6px; color:var(--muted); margin-bottom:6px;}
+.hud-chip .value{font-family:'JetBrains Mono'; font-size:16px; font-weight:700;}
+
+/* trade cards */
+.trade-card{
+  background:var(--surface); border:1px solid var(--line); border-radius:14px;
+  padding:14px 16px; margin-bottom:10px; display:flex; align-items:center; justify-content:space-between; gap:10px;
+}
+.trade-card-left{display:flex; flex-direction:column; gap:6px; min-width:0;}
+.trade-card-date{font-family:'JetBrains Mono'; font-size:11.5px; color:var(--muted);}
+.trade-card-tags{display:flex; gap:6px; align-items:center;}
+.trade-card-notes{font-size:11.5px; color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:200px;}
+.trade-card-right{display:flex; flex-direction:column; align-items:flex-end; gap:8px; flex-shrink:0;}
+.trade-card-pnl{font-family:'JetBrains Mono'; font-weight:700; font-size:15px;}
+
+/* fab */
+.fab{
+  position:fixed; right:18px; bottom:calc(84px + env(safe-area-inset-bottom, 0px));
+  width:56px; height:56px; border-radius:50%; border:none;
+  background:linear-gradient(135deg, var(--purple-2), var(--accent));
+  color:#0a0812; font-size:26px; font-weight:700; cursor:pointer;
+  display:flex; align-items:center; justify-content:center;
+  box-shadow:0 8px 24px rgba(124,92,191,0.45); z-index:50;
+  transition:transform .15s ease;
+}
+.fab:active{transform:scale(0.92);}
+
+/* bottom nav */
+.bottom-nav{
+  position:fixed; left:0; right:0; bottom:0; z-index:45;
+  display:flex; justify-content:space-around;
+  background:rgba(13,10,19,0.92); backdrop-filter:blur(16px);
+  border-top:1px solid var(--line);
+  padding:10px 6px calc(10px + env(safe-area-inset-bottom, 0px));
+}
+.nav-btn{
+  background:none; border:none; color:var(--muted); font-size:19px;
+  display:flex; flex-direction:column; align-items:center; gap:3px;
+  cursor:pointer; padding:4px 10px; border-radius:10px; transition:color .15s ease;
+}
+.nav-btn span{font-size:10px; font-family:'Inter'; font-weight:600; letter-spacing:0.2px;}
+.nav-btn.active{color:var(--accent-bright);}
+
+@media(min-width:640px){
+  .hud-main{max-width:560px;}
+}
 </style>
 </head>
 <body>
@@ -352,40 +440,52 @@ tr.trow:hover{background:rgba(167,139,250,0.05);}
 </div>
 
 <div id="appRoot">
-<div class="topbar">
-  <div class="brand">
+<div class="hud-topbar">
+  <div class="hud-brand">
     <div class="brand-mark">PT</div>
     <div class="brand-text">
       <div class="t1">PROP TRACKER</div>
-      <div class="t2">Tradeify · Select 25K</div>
+      <div class="t2">HUD · Select 25K</div>
     </div>
   </div>
-  <div class="top-right">
-    <span class="user-email" id="userEmailTag"></span>
-    <span class="attempt-tag" id="syncStatusTag" style="color:var(--muted);"></span>
-    <span class="attempt-tag" id="attemptTag">Podejście #1</span>
-    <span class="phase-badge eval" id="phaseBadge">Evaluation</span>
-    <button class="logout-btn" onclick="logout()">Wyloguj</button>
+  <div class="hud-topbar-right">
+    <span class="user-email" id="userEmailTag" style="display:none;"></span>
+    <span class="sync-pill" id="syncStatusTag"></span>
+    <button class="logout-btn" onclick="logout()">⎋</button>
   </div>
 </div>
 
-<div class="wrap">
+<div class="viewing-banner" id="viewingBanner" style="margin:16px 16px -4px; max-width:520px; margin-left:auto; margin-right:auto;">
+  <span id="viewingBannerText"></span>
+  <button class="btn small primary" onclick="backToActive()">Wróć</button>
+</div>
 
-  <div class="viewing-banner" id="viewingBanner">
-    <span id="viewingBannerText"></span>
-    <button class="btn small primary" onclick="backToActive()">Wróć do aktywnego podejścia</button>
-  </div>
+<main class="hud-main">
 
-  <div class="hero">
-    <div class="hero-top">
-      <div>
-        <div class="hero-title">Trading Challenge</div>
-      </div>
-      <div class="pnl-big">
-        <div class="label">P&L bieżącego konta</div>
-        <div class="val zero" id="heroPnl">$0</div>
+  <!-- TAB: Dashboard -->
+  <section class="hud-panel active" id="panelDashboard">
+    <div class="hud-badge-row">
+      <span class="phase-badge eval" id="phaseBadge">Evaluation</span>
+      <span class="attempt-tag" id="attemptTag">Podejście #1</span>
+    </div>
+
+    <div class="gauge-wrap">
+      <svg viewBox="0 0 200 200" class="gauge-svg">
+        <circle class="gauge-track" cx="100" cy="100" r="85"/>
+        <circle class="gauge-track" cx="100" cy="100" r="68"/>
+        <circle id="gaugeDD" class="gauge-ring dd" cx="100" cy="100" r="85"/>
+        <circle id="gaugeTarget" class="gauge-ring target" cx="100" cy="100" r="68"/>
+      </svg>
+      <div class="gauge-center">
+        <div class="gauge-label">P&L</div>
+        <div class="val zero" id="heroPnl" style="font-size:30px;">$0</div>
       </div>
     </div>
+    <div class="gauge-legend">
+      <span><span class="dot target"></span>Cel</span>
+      <span><span class="dot dd"></span>Drawdown</span>
+    </div>
+
     <div class="chart-card">
       <svg viewBox="0 0 1000 140" preserveAspectRatio="none">
         <defs>
@@ -402,48 +502,45 @@ tr.trow:hover{background:rgba(167,139,250,0.05);}
         <path id="eqLinePath" class="eq-line" d=""></path>
       </svg>
     </div>
-  </div>
 
-  <div class="stat-grid">
-    <div class="stat-card">
-      <div class="label">Cel zysku</div>
-      <div class="value" id="statTarget">$0 / $1 500</div>
-      <div class="bar-track"><div class="bar-fill" id="barTarget" style="width:0%"></div></div>
-      <div class="stat-sub" id="subTarget">0% celu</div>
-    </div>
-    <div class="stat-card">
-      <div class="label">Trailing Drawdown</div>
-      <div class="value" id="statDD">$0 / $1 000</div>
-      <div class="bar-track"><div class="bar-fill danger" id="barDD" style="width:0%"></div></div>
-      <div class="stat-sub" id="subDD">Bufor bezpieczny</div>
-    </div>
-    <div class="stat-card">
-      <div class="label">Dni tradingowe</div>
-      <div class="value" id="statDays">0 / 3</div>
-      <div class="bar-track"><div class="bar-fill" id="barDays" style="width:0%"></div></div>
-      <div class="stat-sub" id="subDays">Minimum do zaliczenia</div>
-    </div>
-    <div class="stat-card">
-      <div class="label">Konsystencja (40%)</div>
-      <div class="value" id="statCons">—</div>
-      <div class="bar-track"><div class="bar-fill" id="barCons" style="width:0%"></div></div>
-      <div class="stat-sub" id="subCons">Najlepszy dzień vs cały zysk</div>
-    </div>
-  </div>
-
-  <div class="wl-strip">
-    <div class="wl-pill won"><div class="n" id="wlWon">0</div><div class="l">Wygrane konta</div></div>
-    <div class="wl-pill lost"><div class="n" id="wlLost">0</div><div class="l">Przegrane konta</div></div>
-    <div class="wl-pill"><div class="n" id="wlRate">—</div><div class="l">Win rate (transakcje)</div></div>
-  </div>
-
-  <div class="section">
-    <div class="section-head">
-      <div class="section-title">Kalendarz P&L</div>
-      <div style="display:flex; gap:8px;">
-        <button class="btn ghost small" onclick="openImportModal()">⇧ Import zbiorczy</button>
-        <button class="btn primary small" onclick="openTradeModal()">+ Dodaj trade</button>
+    <div class="hud-chip-grid">
+      <div class="hud-chip">
+        <div class="label">Cel zysku</div>
+        <div class="value" id="statTarget">$0 / $1 500</div>
+        <div class="bar-track"><div class="bar-fill" id="barTarget" style="width:0%"></div></div>
+        <div class="stat-sub" id="subTarget">0% celu</div>
       </div>
+      <div class="hud-chip">
+        <div class="label">Drawdown</div>
+        <div class="value" id="statDD">$0 / $1 000</div>
+        <div class="bar-track"><div class="bar-fill danger" id="barDD" style="width:0%"></div></div>
+        <div class="stat-sub" id="subDD">Bufor bezpieczny</div>
+      </div>
+      <div class="hud-chip">
+        <div class="label">Dni tradingowe</div>
+        <div class="value" id="statDays">0 / 3</div>
+        <div class="bar-track"><div class="bar-fill" id="barDays" style="width:0%"></div></div>
+        <div class="stat-sub" id="subDays">Minimum do zaliczenia</div>
+      </div>
+      <div class="hud-chip">
+        <div class="label">Konsystencja</div>
+        <div class="value" id="statCons">—</div>
+        <div class="bar-track"><div class="bar-fill" id="barCons" style="width:0%"></div></div>
+        <div class="stat-sub" id="subCons">Najlepszy dzień vs zysk</div>
+      </div>
+    </div>
+
+    <div class="wl-strip" style="margin-top:14px;">
+      <div class="wl-pill won"><div class="n" id="wlWon">0</div><div class="l">Wygrane</div></div>
+      <div class="wl-pill lost"><div class="n" id="wlLost">0</div><div class="l">Przegrane</div></div>
+      <div class="wl-pill"><div class="n" id="wlRate">—</div><div class="l">Win rate</div></div>
+    </div>
+  </section>
+
+  <!-- TAB: Calendar -->
+  <section class="hud-panel" id="panelCalendar">
+    <div class="hud-panel-head">
+      <div class="section-title">Kalendarz P&L</div>
     </div>
     <div class="cal-card">
       <div class="cal-nav">
@@ -453,32 +550,38 @@ tr.trow:hover{background:rgba(167,139,250,0.05);}
       </div>
       <div class="cal-grid" id="calGrid"></div>
     </div>
-  </div>
+  </section>
 
-  <div class="section">
-    <div class="section-head">
-      <div class="section-title">Dziennik transakcji</div>
+  <!-- TAB: Trades -->
+  <section class="hud-panel" id="panelTrades">
+    <div class="hud-panel-head">
+      <div class="section-title">Transakcje</div>
+      <button class="btn ghost small" onclick="openImportModal()">⇧ Import</button>
     </div>
-    <div class="table-card">
-      <table>
-        <thead>
-          <tr><th>Data</th><th>Instrument</th><th>Kierunek</th><th>P&L</th><th>Notatka</th><th></th></tr>
-        </thead>
-        <tbody id="tradeTbody"></tbody>
-      </table>
-      <div class="empty-state" id="tradeEmpty" style="display:none;">Brak transakcji — dodaj pierwszy trade, żeby zobaczyć statystyki.</div>
-    </div>
-  </div>
+    <div id="tradeCardsList"></div>
+    <div class="empty-state" id="tradeEmpty" style="display:none;">Brak transakcji — dodaj pierwszy trade przyciskiem +.</div>
+  </section>
 
-  <div class="section">
-    <div class="section-head">
-      <div class="section-title">Podejścia (kliknij, aby przeglądać/edytować)</div>
-      <button class="btn danger-outline small" onclick="confirmResetAll()">Wyczyść wszystko</button>
+  <!-- TAB: Attempts -->
+  <section class="hud-panel" id="panelAttempts">
+    <div class="hud-panel-head">
+      <div class="section-title">Podejścia</div>
+      <button class="btn danger-outline small" onclick="confirmResetAll()">Wyczyść</button>
     </div>
     <div class="history-list" id="historyList"></div>
-  </div>
+  </section>
 
-</div>
+</main>
+
+<button class="fab" onclick="openTradeModal()">+</button>
+
+<nav class="bottom-nav">
+  <button class="nav-btn active" id="navDashboard" onclick="switchTab('Dashboard')">📊<span>Dashboard</span></button>
+  <button class="nav-btn" id="navCalendar" onclick="switchTab('Calendar')">📅<span>Kalendarz</span></button>
+  <button class="nav-btn" id="navTrades" onclick="switchTab('Trades')">📋<span>Trady</span></button>
+  <button class="nav-btn" id="navAttempts" onclick="switchTab('Attempts')">🏁<span>Podejścia</span></button>
+</nav>
+
 </div>
 <!-- /appRoot -->
 
@@ -1033,11 +1136,68 @@ function renderAll(){
   const m = computeMetrics(attempt);
   renderHero(m);
   renderStats(m, attempt);
+  renderGauges(m);
   renderCalendar(m);
-  renderTradeTable(m);
+  renderTradeCards(m);
   renderHistory();
   renderViewingBanner();
   if(isViewingActive()) checkPhaseTransition(m);
+}
+
+/* ===================== HUD: GAUGES ===================== */
+function renderGauges(m){
+  const rules = RULES.evaluation;
+  const ddPct = Math.max(0, Math.min(1, m.currentDD / rules.trailingDD));
+  const targetPct = Math.max(0, Math.min(1, m.totalPnl / rules.target));
+  const circDD = 2 * Math.PI * 85;
+  const circTarget = 2 * Math.PI * 68;
+  const ddCircle = document.getElementById('gaugeDD');
+  const targetCircle = document.getElementById('gaugeTarget');
+  ddCircle.style.strokeDasharray = circDD;
+  ddCircle.style.strokeDashoffset = circDD * (1 - ddPct);
+  targetCircle.style.strokeDasharray = circTarget;
+  targetCircle.style.strokeDashoffset = circTarget * (1 - targetPct);
+}
+
+/* ===================== HUD: TRADE CARDS ===================== */
+function renderTradeCards(m){
+  const list = document.getElementById('tradeCardsList');
+  const emptyEl = document.getElementById('tradeEmpty');
+  const sorted = m.trades.slice().sort((a,b)=> b.date.localeCompare(a.date) || b.id.localeCompare(a.id));
+  if(sorted.length === 0){
+    list.innerHTML = '';
+    emptyEl.style.display = 'block';
+    return;
+  }
+  emptyEl.style.display = 'none';
+  const dirLabel = d => d === 'long' ? 'LONG' : d === 'short' ? 'SHORT' : 'BE';
+  list.innerHTML = sorted.map(t => `
+    <div class="trade-card">
+      <div class="trade-card-left">
+        <div class="trade-card-date">${t.date}</div>
+        <div class="trade-card-tags">
+          <span class="tag ${t.direction}">${dirLabel(t.direction)}</span>
+          <span class="tag">${t.instrument}</span>
+        </div>
+        ${t.notes ? `<div class="trade-card-notes">${t.notes}</div>` : ''}
+      </div>
+      <div class="trade-card-right">
+        <div class="trade-card-pnl ${t.pnl>=0?'pos':'neg'}" style="color:${t.pnl>=0?'var(--green)':'var(--red)'}">${fmtMoneyPrecise(t.pnl)}</div>
+        <div class="row-actions">
+          <button class="icon-btn" onclick="editTrade('${t.id}')" title="Edytuj">✎</button>
+          <button class="icon-btn" onclick="deleteTrade('${t.id}')" title="Usuń">✕</button>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+/* ===================== HUD: TABS ===================== */
+function switchTab(name){
+  ['Dashboard','Calendar','Trades','Attempts'].forEach(t=>{
+    document.getElementById('panel'+t).classList.toggle('active', t===name);
+    document.getElementById('nav'+t).classList.toggle('active', t===name);
+  });
 }
 
 /* ===================== TRADE MODAL ===================== */
