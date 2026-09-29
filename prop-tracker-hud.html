@@ -2,7 +2,7 @@
 <html lang="pl">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>PROP TRACKER HUD — Tradeify Select 25K</title>
 <link rel="manifest" href="hud-manifest.json">
 <meta name="theme-color" content="#291e3c">
@@ -32,8 +32,8 @@
   --red:#f36a6a;
   --amber:#e8b768;
 }
-*{box-sizing:border-box; margin:0; padding:0;}
-html{scroll-behavior:smooth; overflow-x:hidden; width:100%;}
+*{box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; -webkit-touch-callout:none;}
+html{scroll-behavior:smooth; overflow-x:hidden; width:100%; overscroll-behavior:none; -webkit-text-size-adjust:100%; touch-action:manipulation;}
 body{
   background:
     radial-gradient(1200px 600px at 15% -10%, rgba(41,30,60,0.55), transparent 60%),
@@ -44,9 +44,11 @@ body{
   min-height:100vh;
   padding-bottom:80px;
   overflow-x:hidden;
-  overscroll-behavior-x:none;
+  overscroll-behavior:none;
   width:100%;
   max-width:100vw;
+  touch-action:manipulation;
+  position:relative;
 }
 .mono{font-family:'JetBrains Mono', monospace;}
 .disp{font-family:'Space Grotesk', sans-serif;}
@@ -158,10 +160,13 @@ body{
   aspect-ratio:1/0.82; border-radius:10px; border:1px solid var(--line);
   background:rgba(255,255,255,0.02); padding:7px; cursor:pointer;
   display:flex; flex-direction:column; justify-content:space-between;
-  transition:transform .15s ease, border-color .15s ease;
-  position:relative; overflow:hidden; min-width:0;
+  position:relative; overflow:hidden; min-width:0; contain:layout style;
 }
-.cal-day:hover{transform:translateY(-2px); border-color:var(--accent);}
+.cal-day:active{border-color:var(--accent); background:rgba(167,139,250,0.06);}
+@media (hover:hover) and (pointer:fine){
+  .cal-day{transition:transform .15s ease, border-color .15s ease;}
+  .cal-day:hover{transform:translateY(-2px); border-color:var(--accent);}
+}
 .cal-day.empty{visibility:hidden;}
 .cal-day .dnum{font-size:11px; color:var(--muted); font-family:'JetBrains Mono';}
 .cal-day .dpnl{
@@ -628,6 +633,19 @@ tr.trow:hover{background:rgba(167,139,250,0.05);}
       <label>Notatka (opcjonalnie)</label>
       <textarea id="fNotes" rows="2" placeholder="setup, godzina, komentarz..."></textarea>
     </div>
+    <div class="field">
+      <label>Zrzut ekranu (opcjonalnie)</label>
+      <input type="file" accept="image/*" id="fImageInput" style="display:none;" onchange="handleImageSelect(event)">
+      <div style="display:flex; gap:8px; flex-wrap:wrap;">
+        <button type="button" class="btn ghost small" onclick="document.getElementById('fImageInput').click()">📷 Wybierz zdjęcie</button>
+        <button type="button" class="btn ghost small" id="btnViewExistingImage" style="display:none;" onclick="viewExistingTradeImage()">🔍 Podgląd zapisanego</button>
+        <button type="button" class="btn ghost small" id="btnRemoveImage" style="display:none;" onclick="removePendingImage()">✕ Usuń zdjęcie</button>
+      </div>
+      <div id="imagePreviewWrap" style="display:none; margin-top:10px;">
+        <img id="imagePreviewImg" style="max-width:100%; border-radius:10px; border:1px solid var(--line); display:block;">
+      </div>
+      <div class="hint">Możesz też wkleić zrzut ze schowka (Ctrl+V), gdy to okno jest otwarte.</div>
+    </div>
     <div class="modal-actions">
       <button class="btn ghost" onclick="closeTradeModal()">Anuluj</button>
       <button class="btn primary" onclick="saveTrade()">Zapisz trade</button>
@@ -652,6 +670,16 @@ tr.trow:hover{background:rgba(167,139,250,0.05);}
     <div class="modal-actions">
       <button class="btn ghost" onclick="closeImportModal()">Anuluj</button>
       <button class="btn primary" onclick="submitImport()">Importuj</button>
+    </div>
+  </div>
+</div>
+
+<!-- Image viewer (zrzut ekranu tradea) -->
+<div class="overlay" id="imageViewerOverlay">
+  <div class="modal" style="max-width:640px; padding:14px; text-align:center;">
+    <button class="close-x" onclick="closeImageViewer()">✕</button>
+    <div id="imageViewerBody" style="margin-top:10px;">
+      <div class="empty-state">Wczytywanie…</div>
     </div>
   </div>
 </div>
@@ -1063,33 +1091,6 @@ function renderCalendar(m){
 }
 
 /* ===================== RENDER: TRADE TABLE ===================== */
-function renderTradeTable(m){
-  const tbody = document.getElementById('tradeTbody');
-  const emptyEl = document.getElementById('tradeEmpty');
-  const sorted = m.trades.slice().sort((a,b)=> b.date.localeCompare(a.date) || b.id.localeCompare(a.id));
-  if(sorted.length === 0){
-    tbody.innerHTML = '';
-    emptyEl.style.display = 'block';
-    return;
-  }
-  emptyEl.style.display = 'none';
-  tbody.innerHTML = sorted.map(t => `
-    <tr class="trow">
-      <td class="mono">${t.date}</td>
-      <td>${t.instrument}</td>
-      <td><span class="tag ${t.direction}">${t.direction === 'long' ? 'LONG' : t.direction === 'short' ? 'SHORT' : 'BE'}</span></td>
-      <td class="pnl-cell ${t.pnl>=0?'pos':'neg'}">${fmtMoneyPrecise(t.pnl)}</td>
-      <td style="color:var(--muted); max-width:160px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${t.notes || ''}</td>
-      <td>
-        <div class="row-actions">
-          <button class="icon-btn" onclick="editTrade('${t.id}')" title="Edytuj">✎</button>
-          <button class="icon-btn" onclick="deleteTrade('${t.id}')" title="Usuń">✕</button>
-        </div>
-      </td>
-    </tr>
-  `).join('');
-}
-
 /* ===================== RENDER: HISTORY ===================== */
 function renderHistory(){
   const list = document.getElementById('historyList');
@@ -1192,6 +1193,7 @@ function renderTradeCards(m){
       <div class="trade-card-right">
         <div class="trade-card-pnl ${t.pnl>=0?'pos':'neg'}" style="color:${t.pnl>=0?'var(--green)':'var(--red)'}">${fmtMoneyPrecise(t.pnl)}</div>
         <div class="row-actions">
+          ${t.hasImage ? `<button class="icon-btn" onclick="openImageViewer('${t.id}')" title="Zobacz zrzut ekranu">📷</button>` : ''}
           <button class="icon-btn" onclick="editTrade('${t.id}')" title="Edytuj">✎</button>
           <button class="icon-btn" onclick="deleteTrade('${t.id}')" title="Usuń">✕</button>
         </div>
@@ -1229,6 +1231,7 @@ function openTradeModal(prefillDate){
   selectDirection('long');
   document.getElementById('fPnl').value = '';
   document.getElementById('fNotes').value = '';
+  resetImageField(null, false);
   document.getElementById('tradeOverlay').classList.add('show');
 }
 function closeTradeModal(){
@@ -1248,17 +1251,26 @@ function saveTrade(){
   if(!state.allTrades) state.allTrades = [];
   const attempt = getViewAttempt();
 
+  let finalHasImage;
+  if(pendingImageDataUrl) finalHasImage = true;
+  else if(pendingImageRemoved) finalHasImage = false;
+  else finalHasImage = editingHadImage;
+
+  let tradeIdForImage;
   if(id){
     const t = attempt.trades.find(x=>x.id===id);
-    if(t){ Object.assign(t, {date, instrument, direction, pnl, notes}); }
+    if(t){ Object.assign(t, {date, instrument, direction, pnl, notes, hasImage: finalHasImage}); }
     const tAll = state.allTrades.find(x=>x.id===id);
-    if(tAll){ Object.assign(tAll, {date, instrument, direction, pnl, notes}); }
+    if(tAll){ Object.assign(tAll, {date, instrument, direction, pnl, notes, hasImage: finalHasImage}); }
+    tradeIdForImage = id;
   } else {
-    const newTrade = { id: uid(), date, instrument, direction, pnl, notes };
+    const newTrade = { id: uid(), date, instrument, direction, pnl, notes, hasImage: finalHasImage };
     attempt.trades.push(newTrade);
     state.allTrades.push(newTrade);
+    tradeIdForImage = newTrade.id;
   }
   saveState();
+  persistPendingImage(tradeIdForImage);
   closeTradeModal();
   renderAll();
 }
@@ -1273,6 +1285,7 @@ function editTrade(id){
   selectDirection(t.direction);
   document.getElementById('fPnl').value = t.pnl;
   document.getElementById('fNotes').value = t.notes || '';
+  resetImageField(t.id, !!t.hasImage);
   document.getElementById('tradeOverlay').classList.add('show');
 }
 function deleteTrade(id){
@@ -1281,7 +1294,138 @@ function deleteTrade(id){
   attempt.trades = attempt.trades.filter(x=>x.id!==id);
   if(state.allTrades) state.allTrades = state.allTrades.filter(x=>x.id!==id);
   saveState();
+  if(currentUser){ tradeImageDocRef(id).delete().catch(()=>{}); }
   renderAll();
+}
+
+/* ===================== TRADE SCREENSHOTS ===================== */
+let pendingImageDataUrl = null;
+let pendingImageRemoved = false;
+let editingImageTradeId = null;
+let editingHadImage = false;
+
+function resetImageField(forTradeId, hadImage){
+  pendingImageDataUrl = null;
+  pendingImageRemoved = false;
+  editingImageTradeId = forTradeId || null;
+  editingHadImage = !!hadImage;
+  document.getElementById('fImageInput').value = '';
+  document.getElementById('imagePreviewWrap').style.display = 'none';
+  document.getElementById('imagePreviewImg').src = '';
+  document.getElementById('btnViewExistingImage').style.display = editingHadImage ? 'inline-flex' : 'none';
+  document.getElementById('btnRemoveImage').style.display = editingHadImage ? 'inline-flex' : 'none';
+}
+
+function compressImageFile(file){
+  return new Promise((resolve, reject)=>{
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error('nie udało się odczytać pliku'));
+    reader.onload = () => {
+      const img = new Image();
+      img.onerror = () => reject(new Error('nie udało się wczytać obrazu'));
+      img.onload = () => {
+        const maxDim = 1000;
+        let w = img.width, h = img.height;
+        if(w > maxDim || h > maxDim){
+          if(w >= h){ h = Math.round(h * maxDim / w); w = maxDim; }
+          else { w = Math.round(w * maxDim / h); h = maxDim; }
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        let quality = 0.72;
+        let dataUrl = canvas.toDataURL('image/jpeg', quality);
+        while(dataUrl.length > 700000 && quality > 0.3){
+          quality -= 0.12;
+          dataUrl = canvas.toDataURL('image/jpeg', quality);
+        }
+        resolve(dataUrl);
+      };
+      img.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+async function processIncomingImageFile(file){
+  if(!file || !file.type || file.type.indexOf('image/') !== 0) return;
+  try{
+    const dataUrl = await compressImageFile(file);
+    pendingImageDataUrl = dataUrl;
+    pendingImageRemoved = false;
+    document.getElementById('imagePreviewImg').src = dataUrl;
+    document.getElementById('imagePreviewWrap').style.display = 'block';
+    document.getElementById('btnViewExistingImage').style.display = 'none';
+    document.getElementById('btnRemoveImage').style.display = 'inline-flex';
+  }catch(err){
+    alert('Nie udało się przetworzyć obrazu: ' + err.message);
+  }
+}
+function handleImageSelect(e){
+  const file = e.target.files && e.target.files[0];
+  if(file) processIncomingImageFile(file);
+}
+function removePendingImage(){
+  if(pendingImageDataUrl){
+    pendingImageDataUrl = null;
+    document.getElementById('imagePreviewWrap').style.display = 'none';
+    document.getElementById('fImageInput').value = '';
+    document.getElementById('btnViewExistingImage').style.display = editingHadImage ? 'inline-flex' : 'none';
+    document.getElementById('btnRemoveImage').style.display = editingHadImage ? 'inline-flex' : 'none';
+  } else {
+    pendingImageRemoved = true;
+    document.getElementById('btnViewExistingImage').style.display = 'none';
+    document.getElementById('btnRemoveImage').style.display = 'none';
+  }
+}
+document.addEventListener('paste', (e)=>{
+  const overlay = document.getElementById('tradeOverlay');
+  if(!overlay || !overlay.classList.contains('show')) return;
+  const cd = e.clipboardData || window.clipboardData;
+  if(!cd || !cd.items) return;
+  for(const item of cd.items){
+    if(item.type && item.type.indexOf('image/') === 0){
+      const file = item.getAsFile();
+      if(file){ processIncomingImageFile(file); e.preventDefault(); }
+      break;
+    }
+  }
+});
+
+function tradeImageDocRef(tradeId){
+  return db.collection('users').doc(currentUser.uid).collection('screenshots').doc(tradeId);
+}
+async function persistPendingImage(tradeId){
+  if(pendingImageDataUrl){
+    try{
+      await tradeImageDocRef(tradeId).set({ data: pendingImageDataUrl, savedAt: Date.now() });
+    }catch(err){
+      console.error('Błąd zapisu zdjęcia:', err);
+      alert('Trade zapisany, ale nie udało się zapisać zdjęcia (sprawdź reguły Firestore dla /screenshots): ' + err.message);
+    }
+  } else if(pendingImageRemoved){
+    try{ await tradeImageDocRef(tradeId).delete(); }catch(err){ console.error('Błąd usuwania zdjęcia:', err); }
+  }
+}
+function viewExistingTradeImage(){
+  if(editingImageTradeId) openImageViewer(editingImageTradeId);
+}
+function openImageViewer(tradeId){
+  document.getElementById('imageViewerOverlay').classList.add('show');
+  document.getElementById('imageViewerBody').innerHTML = '<div class="empty-state">Wczytywanie…</div>';
+  tradeImageDocRef(tradeId).get().then(doc=>{
+    if(doc.exists && doc.data().data){
+      document.getElementById('imageViewerBody').innerHTML =
+        '<img src="' + doc.data().data + '" style="max-width:100%; border-radius:12px; display:block; margin:0 auto;">';
+    } else {
+      document.getElementById('imageViewerBody').innerHTML = '<div class="empty-state">Nie znaleziono zapisanego zdjęcia.</div>';
+    }
+  }).catch(err=>{
+    document.getElementById('imageViewerBody').innerHTML = '<div class="empty-state">Błąd wczytywania: ' + err.message + '</div>';
+  });
+}
+function closeImageViewer(){
+  document.getElementById('imageViewerOverlay').classList.remove('show');
 }
 
 /* ===================== BULK IMPORT ===================== */
@@ -1407,6 +1551,7 @@ function confirmResetAll(){
 /* ===================== INIT ===================== */
 document.getElementById('tradeOverlay').addEventListener('click', e=>{ if(e.target.id==='tradeOverlay') closeTradeModal(); });
 document.getElementById('importOverlay').addEventListener('click', e=>{ if(e.target.id==='importOverlay') closeImportModal(); });
+document.getElementById('imageViewerOverlay').addEventListener('click', e=>{ if(e.target.id==='imageViewerOverlay') closeImageViewer(); });
 
 </script>
 </body>
